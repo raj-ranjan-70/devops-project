@@ -2,24 +2,37 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Category;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
-class DatabaseSeeder extends Seeder
+class CategorySeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $categories = [
+            ['name' => 'Wedding', 'type' => 'event'],
+            ['name' => 'Gala', 'type' => 'event'],
+            ['name' => 'Corporate', 'type' => 'event'],
+            ['name' => 'Birthday', 'type' => 'event'],
+            ['name' => 'Florist', 'type' => 'vendor'],
+            ['name' => 'Catering', 'type' => 'vendor'],
+            ['name' => 'Photography', 'type' => 'vendor'],
+            ['name' => 'Venue', 'type' => 'vendor'],
+        ];
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        foreach ($categories as $cat) {
+
+            $slug = Str::slug($cat['name']);
+
+            Category::firstOrCreate(
+                ['slug' => $slug],
+                [
+                    'name' => $cat['name'],
+                    'type' => $cat['type'],
+                    'slug' => $slug
+                ]
+            );
+        }
     }
 }
