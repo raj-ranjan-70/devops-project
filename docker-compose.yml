@@ -10,8 +10,8 @@ services:
       - DB_HOST=db
       - DB_PORT=3306
       - DB_DATABASE=event_planner_DB
-      - DB_USERNAME=root
-      - DB_PASSWORD=root
+      - DB_USERNAME=event_user
+      - DB_PASSWORD=StrongPassword123
     depends_on:
       db:
         condition: service_healthy
@@ -29,14 +29,16 @@ services:
 
   db:
     image: mysql:8.0
+    container_name: event-planner-db
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
-    container_name: event-planner-db
     environment:
       - MYSQL_DATABASE=event_planner_DB
-      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=event_user
+      - MYSQL_PASSWORD=StrongPassword123
+      - MYSQL_ROOT_PASSWORD=SuperRootPassword
     volumes:
       - db_data:/var/lib/mysql
     restart: unless-stopped
