@@ -9,7 +9,7 @@ const PublicLayout = () => {
       {!isAuthPage && (
         <nav className="absolute top-0 left-0 right-0 h-24 px-8 md:px-16 flex items-center justify-between bg-white/10 backdrop-blur-md border-b border-white/20 z-[100]">
           <Link to="/" className="text-3xl font-display font-bold text-primary drop-shadow-sm">Aura</Link>
-          
+
           <div className="hidden md:flex items-center space-x-12">
             <Link to="/#features" className="font-bold text-gray-800 hover:text-primary transition-colors">Features</Link>
             <Link to="/#vendors" className="font-bold text-gray-800 hover:text-primary transition-colors">Vendors</Link>
