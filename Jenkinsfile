@@ -16,8 +16,8 @@ pipeline {
             steps {
                 script {
                     echo 'Building and starting containers...'
-                    sh 'docker compose down'
-                    sh 'docker compose up --build -d'
+                    sh 'docker-compose down'
+                    sh 'docker-compose up --build -d'
                 }
             }
         }
