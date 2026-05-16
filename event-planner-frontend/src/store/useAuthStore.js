@@ -29,6 +29,7 @@ const useAuthStore = create((set) => ({
   },
 
   register: async (userData) => {
+    console.log(import.meta.env.VITE_API_URL);
     set({ isLoading: true, error: null });
     try {
       const response = await api.post('/register', userData);
