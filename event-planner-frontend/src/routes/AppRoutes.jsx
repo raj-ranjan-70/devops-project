@@ -8,11 +8,15 @@ import LandingPage from '../pages/LandingPage';
 import LoginPage from '../pages/LoginPage';
 import SignupPage from '../pages/SignupPage';
 import DashboardPage from '../pages/DashboardPage';
+import PlannersPage from '../pages/PlannersPage';
+import AdminVendorsPage from '../pages/AdminVendorsPage';
+import AdminEventsPage from '../pages/AdminEventsPage';
 import EventsPage from '../pages/EventsPage';
 import CreateEventPage from '../pages/CreateEventPage';
 import GuestsPage from '../pages/GuestsPage';
 import VendorsPage from '../pages/VendorsPage';
 import BudgetPage from '../pages/BudgetPage';
+import EventDetailsPage from '../pages/EventDetailsPage';
 
 const AppRoutes = () => {
   return (
@@ -28,8 +32,12 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/planners" element={<PlannersPage />} />
+          <Route path="/admin/vendors" element={<AdminVendorsPage />} />
+          <Route path="/admin/events" element={<AdminEventsPage />} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/events/create" element={<CreateEventPage />} />
+          <Route path="/events/:id" element={<EventDetailsPage />} />
           <Route path="/guests" element={<GuestsPage />} />
           <Route path="/vendors" element={<VendorsPage />} />
           <Route path="/budget" element={<BudgetPage />} />

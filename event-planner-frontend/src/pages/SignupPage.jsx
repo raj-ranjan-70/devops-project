@@ -58,6 +58,31 @@ const SignupPage = () => {
             </div>
 
             <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Account Type</label>
+              <div className="grid grid-cols-2 gap-4">
+                <label className="flex items-center p-4 border border-gray-100 rounded-2xl cursor-pointer hover:bg-gray-50 transition-colors">
+                  <input
+                    {...register('role')}
+                    type="radio"
+                    value="planner"
+                    defaultChecked
+                    className="mr-3 accent-primary"
+                  />
+                  <span className="font-bold text-sm text-gray-700">Event Planner</span>
+                </label>
+                <label className="flex items-center p-4 border border-gray-100 rounded-2xl cursor-pointer hover:bg-gray-50 transition-colors">
+                  <input
+                    {...register('role')}
+                    type="radio"
+                    value="vendor"
+                    className="mr-3 accent-primary"
+                  />
+                  <span className="font-bold text-sm text-gray-700">Service Vendor</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />

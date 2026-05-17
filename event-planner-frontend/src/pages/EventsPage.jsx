@@ -6,12 +6,14 @@ import {
   Filter,
   MoreVertical,
   Calendar,
-  MapPin
+  MapPin,
+  ArrowUpRight
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const EventsPage = () => {
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -66,7 +68,8 @@ const EventsPage = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.05 }}
-              className="glass-card group overflow-hidden rounded-3xl"
+              onClick={() => navigate(`/events/${event.id}`)}
+              className="glass-card group overflow-hidden rounded-3xl cursor-pointer hover:shadow-xl transition-all duration-300"
             >
               <div className="relative h-48 bg-gray-100">
                 {event.cover_image ? (
@@ -76,9 +79,36 @@ const EventsPage = () => {
                     <Calendar size={48} />
                   </div>
                 )}
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full text-xs font-bold text-primary uppercase tracking-widest shadow-lg">
-                  {event.status}
-                </div>
+                {(() => {
+                  const s = event.status?.toLowerCase();
+                  if (s === 'live/happening' || s === 'live') {
+                    return (
+                      <div className="absolute top-4 right-4 bg-emerald-500 text-white px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg flex items-center space-x-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                        <span>Live Now</span>
+                      </div>
+                    );
+                  }
+                  if (s === 'completed') {
+                    return (
+                      <div className="absolute top-4 right-4 bg-gray-600 text-white px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg">
+                        Completed
+                      </div>
+                    );
+                  }
+                  if (s === 'cancelled') {
+                    return (
+                      <div className="absolute top-4 right-4 bg-rose-500 text-white px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg">
+                        Cancelled
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full text-[10px] font-bold text-primary uppercase tracking-widest shadow-lg border border-primary/10">
+                      Upcoming
+                    </div>
+                  );
+                })()}
               </div>
               
               <div className="p-8">

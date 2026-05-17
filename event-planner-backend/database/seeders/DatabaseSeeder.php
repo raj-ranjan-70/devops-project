@@ -6,10 +6,15 @@ use App\Models\Category;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
-class CategorySeeder extends Seeder
+class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call([
+            AdminSeeder::class,
+            VendorServiceSeeder::class,
+        ]);
+
         $categories = [
             ['name' => 'Wedding', 'type' => 'event'],
             ['name' => 'Gala', 'type' => 'event'],

@@ -45,4 +45,22 @@ class GuestController extends Controller
         $guest->delete();
         return response()->json(null, 204);
     }
+
+    public function rsvpEmail(Request $request, Guest $guest)
+    {
+        if ($guest->event->user_id !== $request->user()->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if (!$guest->email) {
+            return response()->json(['error' => 'Guest does not have a valid email address configured.'], 422);
+        }
+
+        // Simulate sending email
+        \Illuminate\Support\Facades\Log::info("RSVP Invitation email simulated successfully to: {$guest->email} for Event: {$guest->event->title}");
+
+        return response()->json([
+            'message' => "RSVP email invitation sent successfully to {$guest->name} ({$guest->email})!"
+        ]);
+    }
 }

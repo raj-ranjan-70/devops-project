@@ -20,6 +20,13 @@ const CreateEventPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const minDateString = () => {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const tzOffset = tomorrow.getTimezoneOffset() * 60000;
+    const localTomorrow = new Date(tomorrow.getTime() - tzOffset);
+    return localTomorrow.toISOString().slice(0, 16);
+  };
+
   const onSubmit = async (data) => {
     setLoading(true);
     try {
@@ -56,15 +63,39 @@ const CreateEventPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-3">Event Date</label>
+              <label className="block text-sm font-bold text-gray-700 mb-3">Event Date (Min 24 hrs from now)</label>
               <div className="relative">
                 <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
-                  {...register('event_date', { required: 'Date is required' })}
+                  {...register('event_date', { 
+                    required: 'Date is required',
+                    validate: value => {
+                      const selected = new Date(value);
+                      const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+                      return selected >= minDate || 'Event must be scheduled at least 24 hours in the future.';
+                    }
+                  })}
                   type="datetime-local"
+                  min={minDateString()}
                   className="w-full pl-12 pr-6 py-4 bg-background rounded-2xl border-none focus:ring-2 focus:ring-primary transition-all"
                 />
               </div>
+              {errors.event_date && <p className="mt-2 text-sm text-red-500">{errors.event_date.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-3">Event Duration (Hours)</label>
+              <input
+                {...register('duration', { 
+                  required: 'Duration is required', 
+                  min: { value: 1, message: 'Duration must be at least 1 hour' }
+                })}
+                type="number"
+                placeholder="e.g. 3"
+                defaultValue={3}
+                className="w-full px-6 py-4 bg-background rounded-2xl border-none focus:ring-2 focus:ring-primary transition-all"
+              />
+              {errors.duration && <p className="mt-2 text-sm text-red-500">{errors.duration.message}</p>}
             </div>
 
             <div>

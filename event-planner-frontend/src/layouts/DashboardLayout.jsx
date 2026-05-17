@@ -21,13 +21,34 @@ const DashboardLayout = () => {
     navigate('/login');
   };
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Events', path: '/events', icon: Calendar },
-    { name: 'Guests', path: '/guests', icon: Users },
-    { name: 'Vendors', path: '/vendors', icon: Truck },
-    { name: 'Budget', path: '/budget', icon: Wallet },
-  ];
+    const getNavItems = (role) => {
+    switch (role) {
+      case 'admin':
+        return [
+          { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { name: 'Planners', path: '/planners', icon: Users },
+          { name: 'Vendors', path: '/admin/vendors', icon: Truck },
+          { name: 'Events', path: '/admin/events', icon: Calendar },
+        ];
+      case 'vendor':
+        return [
+          { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { name: 'Services', path: '/services', icon: Truck },
+          { name: 'Bookings', path: '/bookings', icon: Calendar },
+        ];
+      case 'planner':
+      default:
+        return [
+          { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { name: 'Events', path: '/events', icon: Calendar },
+          { name: 'Guests', path: '/guests', icon: Users },
+          { name: 'Vendors', path: '/vendors', icon: Truck },
+          { name: 'Budget', path: '/budget', icon: Wallet },
+        ];
+    }
+  };
+
+  const navItems = getNavItems(user?.role);
 
   return (
     <div className="min-h-screen bg-background flex">

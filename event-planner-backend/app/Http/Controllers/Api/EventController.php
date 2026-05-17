@@ -28,10 +28,13 @@ class EventController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'event_type' => 'required|string',
-            'event_date' => 'required|date',
+            'event_date' => 'required|date|after_or_equal:' . now()->addHours(24)->toDateTimeString(),
+            'duration' => 'nullable|integer|min:1',
             'budget' => 'nullable|numeric',
             'guest_count' => 'nullable|integer',
             'venue' => 'nullable|string',
+        ], [
+            'event_date.after_or_equal' => 'The event must be scheduled at least 24 hours in the future.'
         ]);
 
         if ($validator->fails()) {
@@ -59,7 +62,10 @@ class EventController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'sometimes|required|string|max:255',
             'event_type' => 'sometimes|required|string',
-            'event_date' => 'sometimes|required|date',
+            'event_date' => 'sometimes|required|date|after_or_equal:' . now()->addHours(24)->toDateTimeString(),
+            'duration' => 'sometimes|nullable|integer|min:1',
+        ], [
+            'event_date.after_or_equal' => 'The event must be scheduled at least 24 hours in the future.'
         ]);
 
         if ($validator->fails()) {
