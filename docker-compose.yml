@@ -28,9 +28,11 @@ services:
   db:
     image: mysql:8.0
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      timeout: 20s
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pSuperRootPassword" ]
+      interval: 10s
+      timeout: 5s
       retries: 10
+      start_period: 30s
     environment:
       - MYSQL_DATABASE=event_planner_DB
       - MYSQL_USER=event_user

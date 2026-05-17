@@ -29,7 +29,7 @@ pipeline {
                     // Wait for DB to be healthy
                     sh 'sleep 30' 
                     sh 'docker-compose exec -T backend php artisan migrate --force'
-                    sh 'docker-compose exec -T backend php artisan db:seed --class=CategorySeeder --force'
+                    sh 'docker-compose exec -T backend php artisan db:seed --force'
                 }
             }
         }
