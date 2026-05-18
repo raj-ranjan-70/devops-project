@@ -8,6 +8,8 @@ use App\Models\Guest;
 use App\Models\Vendor;
 use App\Models\User;
 use App\Models\Payment;
+use App\Models\VendorService;
+use App\Models\ServiceBooking;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -28,6 +30,45 @@ class DashboardController extends Controller
                 ],
                 'recent_users' => User::where('role', '!=', 'admin')->orderBy('created_at', 'desc')->limit(5)->get(),
                 'pending_vendors' => User::where('role', 'vendor')->where('is_active', false)->orderBy('created_at', 'desc')->limit(5)->get(),
+            ]);
+        }
+
+        if ($user->role === 'vendor') {
+            $serviceIds = VendorService::where('user_id', $userId)->pluck('id');
+
+            $activeBookingsCount = ServiceBooking::whereIn('vendor_service_id', $serviceIds)
+                ->where('status', 'accepted')
+                ->count();
+
+            $pendingRequestsCount = ServiceBooking::whereIn('vendor_service_id', $serviceIds)
+                ->where('status', 'pending')
+                ->count();
+
+            $totalEarnings = ServiceBooking::whereIn('vendor_service_id', $serviceIds)
+                ->whereIn('status', ['accepted', 'completed'])
+                ->with('vendorService')
+                ->get()
+                ->sum(function($booking) {
+                    return $booking->vendorService->starting_price ?? 0;
+                });
+
+            $avgRating = VendorService::where('user_id', $userId)->avg('rating') ?? 5.0;
+
+            $recentBookings = ServiceBooking::whereIn('vendor_service_id', $serviceIds)
+                ->with(['event', 'vendorService'])
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+
+            return response()->json([
+                'stats' => [
+                    'active_bookings' => $activeBookingsCount,
+                    'pending_requests' => $pendingRequestsCount,
+                    'total_earnings' => $totalEarnings,
+                    'average_rating' => round($avgRating, 1),
+                ],
+                'recent_bookings' => $recentBookings,
+                'services' => VendorService::where('user_id', $userId)->get(),
             ]);
         }
 
