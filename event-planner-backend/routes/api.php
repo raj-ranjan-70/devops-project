@@ -20,6 +20,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::apiResource('events', EventController::class);
+    Route::post('/guests/rsvp-bulk', [GuestController::class, 'rsvpBulk']);
     Route::apiResource('guests', GuestController::class);
     Route::post('/guests/{guest}/rsvp-email', [GuestController::class, 'rsvpEmail']);
     Route::apiResource('vendors', VendorController::class);

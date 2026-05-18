@@ -96,6 +96,56 @@ class GuestController extends Controller
         }
     }
 
+    public function rsvpBulk(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'guest_ids' => 'required|array',
+            'guest_ids.*' => 'required|exists:guests,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $guestIds = $request->input('guest_ids');
+        $guests = Guest::whereIn('id', $guestIds)->get();
+
+        $successCount = 0;
+        $failedCount = 0;
+
+        foreach ($guests as $guest) {
+            /** @var \App\Models\Guest $guest */
+            if ($guest->event->user_id !== $request->user()->id) {
+                continue;
+            }
+
+            if ($guest->event->status === 'completed') {
+                continue;
+            }
+
+            if (!$guest->email) {
+                continue;
+            }
+
+            try {
+                Mail::to($guest->email)->queue(new RSVPInvitationMail($guest));
+
+                $guest->update(['rsvp_status' => 'pending']);
+
+                Log::info("RSVP Invitation email successfully queued to: {$guest->email} for Event: {$guest->event->title}");
+                $successCount++;
+            } catch (\Exception $e) {
+                Log::error("Failed to queue RSVP invitation email to {$guest->email}: " . $e->getMessage());
+                $failedCount++;
+            }
+        }
+
+        return response()->json([
+            'message' => "Successfully queued {$successCount} RSVP invitation email(s)." . ($failedCount > 0 ? " Failed to queue {$failedCount} email(s)." : "")
+        ]);
+    }
+
+
     /**
      * Handle public single-click RSVP response actions from email CTAs (Accept/Decline)
      */

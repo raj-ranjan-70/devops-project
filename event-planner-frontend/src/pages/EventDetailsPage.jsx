@@ -47,6 +47,11 @@ const EventDetailsPage = () => {
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [selectedGuestForEmail, setSelectedGuestForEmail] = useState(null);
 
+  // Bulk RSVP Email States
+  const [selectedGuestIds, setSelectedGuestIds] = useState([]);
+  const [bulkEmailModalOpen, setBulkEmailModalOpen] = useState(false);
+  const [isSendingBulk, setIsSendingBulk] = useState(false);
+
   // Vendor Filtering States
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -157,6 +162,60 @@ const EventDetailsPage = () => {
     } finally {
       setSendingEmails(prev => ({ ...prev, [guest.id]: false }));
       setSelectedGuestForEmail(null);
+    }
+  };
+
+  // Helper functions for bulk guest selection and email queueing
+  const eligibleGuests = guests.filter(g => g.email);
+  const isAllEligibleSelected = eligibleGuests.length > 0 && eligibleGuests.every(g => selectedGuestIds.includes(g.id));
+
+  const toggleSelectGuest = (guestId) => {
+    setSelectedGuestIds(prev => 
+      prev.includes(guestId) ? prev.filter(id => id !== guestId) : [...prev, guestId]
+    );
+  };
+
+  const toggleSelectAllEligible = () => {
+    if (isAllEligibleSelected) {
+      setSelectedGuestIds([]);
+    } else {
+      setSelectedGuestIds(eligibleGuests.map(g => g.id));
+    }
+  };
+
+  const triggerBulkRsvpEmails = async () => {
+    if (selectedGuestIds.length === 0) return;
+    setBulkEmailModalOpen(false);
+    setIsSendingBulk(true);
+
+    // Turn on visually trackable spinners for each selected guest
+    const loadingMap = {};
+    selectedGuestIds.forEach(id => {
+      loadingMap[id] = true;
+    });
+    setSendingEmails(prev => ({ ...prev, ...loadingMap }));
+
+    try {
+      const res = await api.post('/guests/rsvp-bulk', { guest_ids: selectedGuestIds });
+      showToast(res.data.message || `Successfully sent invitations to ${selectedGuestIds.length} guest(s)!`);
+
+      // Update state dynamically to show pending response
+      setGuests(guests.map(g => 
+        selectedGuestIds.includes(g.id) ? { ...g, rsvp_status: 'pending' } : g
+      ));
+      setSelectedGuestIds([]);
+    } catch (err) {
+      console.error(err);
+      const errMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to dispatch bulk RSVP invitation emails.';
+      showToast(errMsg, 'error');
+    } finally {
+      setIsSendingBulk(false);
+      // Turn off visually trackable spinners
+      const resettingMap = {};
+      selectedGuestIds.forEach(id => {
+        resettingMap[id] = false;
+      });
+      setSendingEmails(prev => ({ ...prev, ...resettingMap }));
     }
   };
 
@@ -413,11 +472,24 @@ const EventDetailsPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Guest list management */}
             <div className="lg:col-span-2 glass-card p-8 rounded-3xl space-y-6">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
                 <h3 className="text-xl font-display font-bold text-gray-800">Confirmed Attendees</h3>
-                <span className="bg-primary/5 text-primary text-xs font-bold px-3 py-1 rounded-full">
-                  Total Guests: {guests.length}
-                </span>
+                <div className="flex items-center space-x-3">
+                  {selectedGuestIds.length > 0 && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      onClick={() => setBulkEmailModalOpen(true)}
+                      className="elegant-button-primary py-1.5 px-4 text-[10px] font-bold flex items-center shadow-md hover:shadow-lg transition-all"
+                    >
+                      <Mail className="mr-1.5 animate-bounce" size={12} />
+                      Send Selected ({selectedGuestIds.length})
+                    </motion.button>
+                  )}
+                  <span className="bg-primary/5 text-primary text-xs font-bold px-3 py-1 rounded-full">
+                    Total Guests: {guests.length}
+                  </span>
+                </div>
               </div>
 
               {guests.length > 0 ? (
@@ -425,6 +497,17 @@ const EventDetailsPage = () => {
                   <table className="w-full text-left border-collapse text-sm">
                     <thead>
                       <tr className="border-b border-gray-100 text-gray-400 text-xs font-bold uppercase tracking-wider">
+                        {!isCompleted && (
+                          <th className="py-3 px-4 w-12 text-center">
+                            <input 
+                              type="checkbox"
+                              disabled={eligibleGuests.length === 0}
+                              checked={isAllEligibleSelected}
+                              onChange={toggleSelectAllEligible}
+                              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary transition-all cursor-pointer"
+                            />
+                          </th>
+                        )}
                         <th className="py-3 px-4">Attendee Name</th>
                         <th className="py-3 px-4">Side/Group</th>
                         <th className="py-3 px-4">RSVP Status</th>
@@ -434,6 +517,25 @@ const EventDetailsPage = () => {
                     <tbody>
                       {guests.map((guest) => (
                         <tr key={guest.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-all">
+                          {!isCompleted && (
+                            <td className="py-4 px-4 w-12 text-center">
+                              {guest.email ? (
+                                <input 
+                                  type="checkbox"
+                                  checked={selectedGuestIds.includes(guest.id)}
+                                  onChange={() => toggleSelectGuest(guest.id)}
+                                  className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary transition-all cursor-pointer"
+                                />
+                              ) : (
+                                <input 
+                                  type="checkbox"
+                                  disabled
+                                  title="No email configured"
+                                  className="w-4 h-4 text-gray-200 border-gray-200 rounded cursor-not-allowed"
+                                />
+                              )}
+                            </td>
+                          )}
                           <td className="py-4 px-4 font-bold text-gray-800">
                             <div>
                               <p>{guest.name}</p>
@@ -884,6 +986,81 @@ const EventDetailsPage = () => {
                   >
                     <Send className="mr-2" size={14} />
                     Confirm & Send Real Email
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Bulk RSVP Invitation Email Confirmation Modal */}
+      <AnimatePresence>
+        {bulkEmailModalOpen && selectedGuestIds.length > 0 && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Overlay */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setBulkEmailModalOpen(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            ></motion.div>
+
+            {/* Modal Box */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-100"
+            >
+              {/* Header */}
+              <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    <Mail size={20} className="animate-pulse" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-display font-bold text-gray-800">Bulk RSVP Dispatch</h2>
+                    <p className="text-xs text-gray-400 mt-0.5">Send real emails to all selected attendees</p>
+                  </div>
+                </div>
+                <button type="button" onClick={() => setBulkEmailModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-all">
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-8 space-y-5">
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  You are about to queue and dispatch luxury RSVP invitations to <strong className="text-primary">{selectedGuestIds.length}</strong> selected guest(s) for the event <strong className="text-gray-700">"{event.title}"</strong>.
+                </p>
+
+                <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 flex items-start space-x-3 text-xs text-primary leading-relaxed">
+                  <Info size={16} className="shrink-0 mt-0.5 text-primary" />
+                  <span>The emails will be securely queued and delivered in the background. Their status will automatically set to <strong>Pending</strong>.</span>
+                </div>
+
+                {/* Footer buttons */}
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                  <button 
+                    type="button" 
+                    onClick={() => setBulkEmailModalOpen(false)} 
+                    className="px-6 py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={triggerBulkRsvpEmails}
+                    disabled={isSendingBulk}
+                    className="elegant-button-primary py-2.5 px-6 text-xs flex items-center font-bold shadow-md hover:shadow-lg"
+                  >
+                    {isSendingBulk ? (
+                      <Loader2 className="animate-spin mr-2" size={14} />
+                    ) : (
+                      <Send className="mr-2" size={14} />
+                    )}
+                    Confirm & Send {selectedGuestIds.length} Emails
                   </button>
                 </div>
               </div>

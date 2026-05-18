@@ -77,7 +77,7 @@ const PlannerDashboard = () => {
           <div className="space-y-4">
             {data?.recent_events?.length > 0 ? (
               data.recent_events.map((event) => (
-                <Link to={`/events/${event.id}`} key={event.id} className="glass-card p-6 rounded-2xl flex items-center justify-between group cursor-pointer hover:bg-white transition-colors block">
+                <Link to={`/events/${event.id}`} key={event.id} className="glass-card p-6 rounded-2xl flex items-center justify-between group cursor-pointer hover:bg-white transition-colors">
                   <div className="flex items-center space-x-4">
                     <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden">
                       {event.cover_image ? (
