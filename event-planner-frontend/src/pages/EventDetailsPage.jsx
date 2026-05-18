@@ -497,7 +497,18 @@ const EventDetailsPage = () => {
 
             {/* Booked Creators Checklist */}
             <div className="glass-card p-8 rounded-3xl space-y-6">
-              <h3 className="text-xl font-display font-bold text-gray-800 border-b border-gray-100 pb-4">Hired Curators</h3>
+              <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                <h3 className="text-xl font-display font-bold text-gray-800">Hired Curators</h3>
+                {!isCompleted && (
+                  <button 
+                    onClick={() => setActiveTab('hire')}
+                    className="elegant-button-secondary py-1.5 px-3 text-xs font-bold flex items-center hover:bg-primary hover:text-white"
+                  >
+                    <Plus size={12} className="mr-1.5" />
+                    Add Curators
+                  </button>
+                )}
+              </div>
               
               {bookings.length > 0 ? (
                 <div className="space-y-4">
