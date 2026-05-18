@@ -339,7 +339,7 @@ const EventDetailsPage = () => {
             initial={{ opacity: 0, y: -50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -50, scale: 0.9 }}
-            className={`fixed top-6 right-6 z-50 p-5 rounded-2xl shadow-xl flex items-center space-x-3 text-sm font-bold border max-w-md ${
+            className={`fixed top-6 right-6 z-[9999] p-5 rounded-2xl shadow-xl flex items-center space-x-3 text-sm font-bold border max-w-md ${
               toastType === 'success' 
                 ? 'bg-emerald-50 text-emerald-800 border-emerald-100' 
                 : 'bg-rose-50 text-rose-800 border-rose-100'
