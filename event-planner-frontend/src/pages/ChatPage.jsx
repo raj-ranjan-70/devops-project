@@ -150,7 +150,7 @@ const ChatPage = () => {
   );
 
   return (
-    <div className="h-[calc(100vh-12rem)] min-h-[500px] flex bg-white/60 backdrop-blur-md rounded-3xl border border-gray-100 overflow-hidden shadow-xl">
+    <div className="h-[calc(100vh-5rem)] -m-8 flex bg-white overflow-hidden">
       {/* LEFT COLUMN: CONTACTS LIST */}
       <div className={"w-full md:w-[300px] md:min-w-[300px] md:max-w-[300px] border-r border-gray-100 flex flex-col " + (selectedContact ? 'hidden md:flex' : 'flex')}>
         {/* Search header */}
