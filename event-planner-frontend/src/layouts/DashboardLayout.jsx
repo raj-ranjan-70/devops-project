@@ -41,8 +41,6 @@ const DashboardLayout = () => {
         return [
           { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
           { name: 'Events', path: '/events', icon: Calendar },
-          { name: 'Guests', path: '/guests', icon: Users },
-          { name: 'Vendors', path: '/vendors', icon: Truck },
           { name: 'Budget', path: '/budget', icon: Wallet },
         ];
     }

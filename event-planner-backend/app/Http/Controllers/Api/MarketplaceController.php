@@ -48,6 +48,10 @@ class MarketplaceController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        if ($event->status === 'completed') {
+            return response()->json(['message' => 'Cannot book services for a completed event.'], 422);
+        }
+
         $booking = ServiceBooking::create([
             'event_id' => $request->event_id,
             'vendor_service_id' => $request->vendor_service_id,

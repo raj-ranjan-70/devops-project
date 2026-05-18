@@ -30,18 +30,31 @@ class GuestController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
+        $event = \App\Models\Event::findOrFail($request->event_id);
+        if ($event->status === 'completed') {
+            return response()->json(['message' => 'Cannot add guests to a completed event.'], 422);
+        }
+
         $guest = Guest::create($request->all());
         return response()->json($guest, 201);
     }
 
     public function update(Request $request, Guest $guest)
     {
+        if ($guest->event->status === 'completed') {
+            return response()->json(['message' => 'Cannot update guests of a completed event.'], 422);
+        }
+
         $guest->update($request->all());
         return response()->json($guest);
     }
 
     public function destroy(Guest $guest)
     {
+        if ($guest->event->status === 'completed') {
+            return response()->json(['message' => 'Cannot remove guests from a completed event.'], 422);
+        }
+
         $guest->delete();
         return response()->json(null, 204);
     }
@@ -50,6 +63,10 @@ class GuestController extends Controller
     {
         if ($guest->event->user_id !== $request->user()->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if ($guest->event->status === 'completed') {
+            return response()->json(['error' => 'Cannot send invitations for a completed event.'], 422);
         }
 
         if (!$guest->email) {

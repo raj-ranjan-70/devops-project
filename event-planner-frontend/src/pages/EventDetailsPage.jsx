@@ -186,6 +186,8 @@ const EventDetailsPage = () => {
     );
   }
 
+  const isCompleted = event.status?.toLowerCase() === 'completed';
+
   // Filtered Vendor services
   const filteredServices = vendorServices.filter(service => {
     const matchesSearch = service.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -278,12 +280,14 @@ const EventDetailsPage = () => {
         >
           Guests ({guests.length})
         </button>
-        <button 
-          onClick={() => setActiveTab('hire')} 
-          className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'hire' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
-        >
-          Direct Curator Booking
-        </button>
+        {!isCompleted && (
+          <button 
+            onClick={() => setActiveTab('hire')} 
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'hire' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+          >
+            Direct Curator Booking
+          </button>
+        )}
       </div>
 
       {/* Tab Contents */}
@@ -373,12 +377,14 @@ const EventDetailsPage = () => {
               ) : (
                 <div className="text-center py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                   <p className="text-xs text-gray-400 mb-4">No services booked for this masterpiece yet.</p>
-                  <button 
-                    onClick={() => setActiveTab('hire')} 
-                    className="elegant-button-primary py-2 px-4 text-xs font-bold inline-flex items-center"
-                  >
-                    Browse Creators
-                  </button>
+                  {!isCompleted && (
+                    <button 
+                      onClick={() => setActiveTab('hire')} 
+                      className="elegant-button-primary py-2 px-4 text-xs font-bold inline-flex items-center"
+                    >
+                      Browse Creators
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -405,7 +411,7 @@ const EventDetailsPage = () => {
                         <th className="py-3 px-4">Attendee Name</th>
                         <th className="py-3 px-4">Side/Group</th>
                         <th className="py-3 px-4">RSVP Status</th>
-                        <th className="py-3 px-4 text-right">Actions</th>
+                        {!isCompleted && <th className="py-3 px-4 text-right">Actions</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -424,31 +430,33 @@ const EventDetailsPage = () => {
                           </td>
                           <td className="py-4 px-4">
                             <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                              guest.rsvp_status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' :
-                              guest.rsvp_status === 'declined' ? 'bg-rose-50 text-rose-700' :
-                              'bg-amber-50 text-amber-700'
+                                guest.rsvp_status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' :
+                                guest.rsvp_status === 'declined' ? 'bg-rose-50 text-rose-700' :
+                                'bg-amber-50 text-amber-700'
                             }`}>
                               {guest.rsvp_status}
                             </span>
                           </td>
-                          <td className="py-4 px-4 text-right space-x-2">
-                            {guest.email && (
+                          {!isCompleted && (
+                            <td className="py-4 px-4 text-right space-x-2">
+                              {guest.email && (
+                                <button 
+                                  onClick={() => onSendRSVPEmail(guest)}
+                                  title="Send RSVP Email invitation link"
+                                  className="w-8 h-8 rounded-full bg-primary/5 hover:bg-primary hover:text-white transition-all text-primary inline-flex items-center justify-center"
+                                >
+                                  <Mail size={14} />
+                                </button>
+                              )}
                               <button 
-                                onClick={() => onSendRSVPEmail(guest)}
-                                title="Send RSVP Email invitation link"
-                                className="w-8 h-8 rounded-full bg-primary/5 hover:bg-primary hover:text-white transition-all text-primary inline-flex items-center justify-center"
+                                onClick={() => onDeleteGuest(guest.id)}
+                                title="Remove Guest"
+                                className="w-8 h-8 rounded-full bg-rose-50 hover:bg-rose-500 hover:text-white transition-all text-rose-600 inline-flex items-center justify-center"
                               >
-                                <Mail size={14} />
+                                <Trash2 size={14} />
                               </button>
-                            )}
-                            <button 
-                              onClick={() => onDeleteGuest(guest.id)}
-                              title="Remove Guest"
-                              className="w-8 h-8 rounded-full bg-rose-50 hover:bg-rose-500 hover:text-white transition-all text-rose-600 inline-flex items-center justify-center"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </td>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -458,69 +466,87 @@ const EventDetailsPage = () => {
                 <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
                   <Users className="mx-auto text-gray-300 mb-4" size={48} />
                   <p className="text-gray-400 font-medium">Your guest catalog is currently pristine.</p>
-                  <p className="text-xs text-gray-400 mt-1">Add attendees using the curator dashboard on the right.</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {isCompleted 
+                      ? 'This event is completed and the guest catalog is locked.' 
+                      : 'Add attendees using the curator dashboard on the right.'}
+                  </p>
                 </div>
               )}
             </div>
 
             {/* Add Guest Curator Card */}
             <div className="glass-card p-8 rounded-3xl space-y-6 self-start">
-              <h3 className="text-xl font-display font-bold text-gray-800 border-b border-gray-100 pb-4">Add Guest</h3>
-              
-              <form onSubmit={handleGuestSubmit(onAddGuest)} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Guest Name</label>
-                  <input
-                    {...registerGuest('name', { required: 'Name is required' })}
-                    type="text"
-                    placeholder="e.g. Eleanor Vance"
-                    className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm"
-                  />
-                  {guestErrors.name && <p className="mt-1 text-xs text-red-500">{guestErrors.name.message}</p>}
+              {isCompleted ? (
+                <div className="space-y-4 text-center py-6">
+                  <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                    <Check size={32} />
+                  </div>
+                  <h3 className="text-xl font-display font-bold text-gray-800">Event Completed</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed">
+                    This masterpiece is officially complete. The guest catalog is finalized and locked against future modifications.
+                  </p>
                 </div>
+              ) : (
+                <>
+                  <h3 className="text-xl font-display font-bold text-gray-800 border-b border-gray-100 pb-4">Add Guest</h3>
+                  
+                  <form onSubmit={handleGuestSubmit(onAddGuest)} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Guest Name</label>
+                      <input
+                        {...registerGuest('name', { required: 'Name is required' })}
+                        type="text"
+                        placeholder="e.g. Eleanor Vance"
+                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm"
+                      />
+                      {guestErrors.name && <p className="mt-1 text-xs text-red-500">{guestErrors.name.message}</p>}
+                    </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Email Address</label>
-                  <input
-                    {...registerGuest('email')}
-                    type="email"
-                    placeholder="name@example.com"
-                    className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Email Address</label>
+                      <input
+                        {...registerGuest('email')}
+                        type="email"
+                        placeholder="name@example.com"
+                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Group Side</label>
-                  <select
-                    {...registerGuest('side')}
-                    className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm text-gray-700"
-                  >
-                    <option value="bride">Bride's Side</option>
-                    <option value="groom">Groom's Side</option>
-                    <option value="general">General Invitee</option>
-                    <option value="vip">VIP / VIP Guest</option>
-                  </select>
-                </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Group Side</label>
+                      <select
+                        {...registerGuest('side')}
+                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm text-gray-700"
+                      >
+                        <option value="bride">Bride's Side</option>
+                        <option value="groom">Groom's Side</option>
+                        <option value="general">General Invitee</option>
+                        <option value="vip">VIP / VIP Guest</option>
+                      </select>
+                    </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Notes</label>
-                  <textarea
-                    {...registerGuest('notes')}
-                    rows={3}
-                    placeholder="Allergies, accommodations, preferences..."
-                    className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm resize-none"
-                  ></textarea>
-                </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Notes</label>
+                      <textarea
+                        {...registerGuest('notes')}
+                        rows={3}
+                        placeholder="Allergies, accommodations, preferences..."
+                        className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm resize-none"
+                      ></textarea>
+                    </div>
 
-                <button 
-                  disabled={submittingGuest}
-                  type="submit" 
-                  className="w-full elegant-button-primary py-3 px-4 text-sm flex items-center justify-center font-bold"
-                >
-                  {submittingGuest ? <Loader2 className="animate-spin mr-2" size={16} /> : <Plus className="mr-2" size={16} />}
-                  Add Attendee
-                </button>
-              </form>
+                    <button 
+                      disabled={submittingGuest}
+                      type="submit" 
+                      className="w-full elegant-button-primary py-3 px-4 text-sm flex items-center justify-center font-bold"
+                    >
+                      {submittingGuest ? <Loader2 className="animate-spin mr-2" size={16} /> : <Plus className="mr-2" size={16} />}
+                      Add Attendee
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -648,15 +674,24 @@ const EventDetailsPage = () => {
                         <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Starting rate</p>
                         <p className="text-lg font-bold text-gray-800">${parseFloat(service.starting_price).toLocaleString()}</p>
                       </div>
-                      <button 
-                        onClick={() => {
-                          setSelectedService(service);
-                          setIsBookModalOpen(true);
-                        }}
-                        className="elegant-button-primary py-2.5 px-4 text-xs font-bold flex items-center shadow-md hover:shadow-lg"
-                      >
-                        Book Curator
-                      </button>
+                      {isCompleted ? (
+                        <button 
+                          disabled
+                          className="bg-gray-100 text-gray-400 py-2.5 px-4 text-xs font-bold flex items-center rounded-full cursor-not-allowed border border-gray-200/50"
+                        >
+                          Event Completed
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => {
+                            setSelectedService(service);
+                            setIsBookModalOpen(true);
+                          }}
+                          className="elegant-button-primary py-2.5 px-4 text-xs font-bold flex items-center shadow-md hover:shadow-lg"
+                        >
+                          Book Curator
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 ))
