@@ -21,7 +21,8 @@ import {
   Loader2, 
   Sparkles,
   Award,
-  ShieldAlert
+  ShieldAlert,
+  Pencil
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -60,6 +61,61 @@ const EventDetailsPage = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
   const { register: registerBooking, handleSubmit: handleBookingSubmit, reset: resetBookingForm, formState: { isSubmitting: bookingSubmitting } } = useForm();
+
+  // Edit Event Specifications States
+  const [isEditSpecModalOpen, setIsEditSpecModalOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editDuration, setEditDuration] = useState('');
+  const [editVenue, setEditVenue] = useState('');
+  const [editBudget, setEditBudget] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [updatingSpec, setUpdatingSpec] = useState(false);
+
+  const openEditSpecModal = () => {
+    setEditTitle(event.title || '');
+    if (event.event_date) {
+      const dateObj = new Date(event.event_date);
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const hours = String(dateObj.getHours()).padStart(2, '0');
+      const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+      setEditDate(`${year}-${month}-${day}T${hours}:${minutes}`);
+    } else {
+      setEditDate('');
+    }
+    setEditDuration(event.duration || 3);
+    setEditVenue(event.venue || '');
+    setEditBudget(event.budget || 0);
+    setEditDescription(event.description || '');
+    setIsEditSpecModalOpen(true);
+  };
+
+  const handleSaveSpec = async (e) => {
+    e.preventDefault();
+    setUpdatingSpec(true);
+    try {
+      const payload = {
+        title: editTitle,
+        event_date: editDate,
+        duration: Number(editDuration),
+        venue: editVenue,
+        budget: Number(editBudget),
+        description: editDescription
+      };
+      const res = await api.put(`/events/${id}`, payload);
+      setEvent(res.data);
+      showToast('Event specifications updated successfully!');
+      setIsEditSpecModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      const errorMsg = err.response?.data?.event_date?.[0] || err.response?.data?.message || 'Failed to update event specifications.';
+      showToast(errorMsg, 'error');
+    } finally {
+      setUpdatingSpec(false);
+    }
+  };
 
   const showToast = (msg, type = 'success') => {
     setToastMessage(msg);
@@ -374,7 +430,18 @@ const EventDetailsPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Event Specs Card */}
             <div className="lg:col-span-2 glass-card p-8 rounded-3xl space-y-6">
-              <h3 className="text-xl font-display font-bold text-gray-800 border-b border-gray-100 pb-4">Event Specifications</h3>
+              <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                <h3 className="text-xl font-display font-bold text-gray-800">Event Specifications</h3>
+                {!isCompleted && (
+                  <button 
+                    onClick={openEditSpecModal}
+                    className="elegant-button-secondary py-1.5 px-4 text-xs font-bold flex items-center hover:bg-primary hover:text-white"
+                  >
+                    <Pencil size={12} className="mr-1.5" />
+                    Edit Specifications
+                  </button>
+                )}
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex items-center space-x-4">
@@ -1064,6 +1131,146 @@ const EventDetailsPage = () => {
                   </button>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Specifications Modal */}
+      <AnimatePresence>
+        {isEditSpecModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Overlay */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEditSpecModalOpen(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            ></motion.div>
+
+            {/* Modal Box */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-100"
+            >
+              {/* Header */}
+              <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    <Pencil size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-display font-bold text-gray-800">Edit Event Specifications</h2>
+                    <p className="text-xs text-gray-400 mt-0.5">Refine event date, venue, budget, and description</p>
+                  </div>
+                </div>
+                <button type="button" onClick={() => setIsEditSpecModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-all">
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSaveSpec} className="p-8 space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Event Title</label>
+                    <input
+                      required
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Date & Time</label>
+                    <input
+                      required
+                      type="datetime-local"
+                      value={editDate}
+                      onChange={(e) => setEditDate(e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm text-gray-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Duration (Hours)</label>
+                    <input
+                      required
+                      type="number"
+                      min="1"
+                      value={editDuration}
+                      onChange={(e) => setEditDuration(e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Venue</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Block 45"
+                      value={editVenue}
+                      onChange={(e) => setEditVenue(e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Budget Limit ($)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editBudget}
+                      onChange={(e) => setEditBudget(e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Aesthetic Vision (Description)</label>
+                  <textarea
+                    rows={4}
+                    placeholder="Describe the aesthetic direction, goals, and outline of your event..."
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-primary transition-all text-sm resize-none text-gray-700"
+                  ></textarea>
+                </div>
+
+                <div className="bg-amber-50 p-4 rounded-2xl flex items-start space-x-3 text-xs text-amber-800 leading-relaxed border border-amber-100">
+                  <Info size={16} className="shrink-0 mt-0.5 text-amber-600" />
+                  <span>The date must be scheduled at least 24 hours in the future to comply with active orchestrator validation rules.</span>
+                </div>
+
+                {/* Footer buttons */}
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                  <button 
+                    type="button" 
+                    onClick={() => setIsEditSpecModalOpen(false)} 
+                    className="px-6 py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    disabled={updatingSpec}
+                    type="submit"
+                    className="elegant-button-primary py-2.5 px-6 text-xs flex items-center font-bold shadow-md hover:shadow-lg"
+                  >
+                    {updatingSpec ? (
+                      <Loader2 className="animate-spin mr-2" size={14} />
+                    ) : (
+                      <Check className="mr-2" size={14} />
+                    )}
+                    Save Specifications
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}
