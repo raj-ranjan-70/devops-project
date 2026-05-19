@@ -36,6 +36,11 @@ class MarketplaceController extends Controller
 
     public function book(Request $request)
     {
+        $user = $request->user();
+        if ($user->role === 'planner' && !$user->is_active) {
+            return response()->json(['message' => 'Your account is currently suspended. You cannot book services.'], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'event_id' => 'required|exists:events,id',
             'vendor_service_id' => 'required|exists:vendor_services,id',

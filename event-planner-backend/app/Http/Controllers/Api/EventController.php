@@ -25,6 +25,11 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
+        $user = $request->user();
+        if ($user->role === 'planner' && !$user->is_active) {
+            return response()->json(['message' => 'Your account is currently suspended. You cannot create new events.'], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'event_type' => 'required|string',

@@ -15,7 +15,7 @@ import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
 
 const DashboardLayout = () => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, fetchUser } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -33,10 +33,14 @@ const DashboardLayout = () => {
   };
 
   useEffect(() => {
+    fetchUser();
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 5000);
+    const interval = setInterval(() => {
+      fetchUser();
+      fetchNotifications();
+    }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchUser]);
 
   // Close dropdown on click outside
   useEffect(() => {

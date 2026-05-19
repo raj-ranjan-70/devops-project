@@ -22,6 +22,11 @@ class GuestController extends Controller
 
     public function store(Request $request)
     {
+        $user = $request->user();
+        if ($user->role === 'planner' && !$user->is_active) {
+            return response()->json(['message' => 'Your account is currently suspended. You cannot add new guests.'], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'event_id' => 'required|exists:events,id',
             'name' => 'required|string|max:255',

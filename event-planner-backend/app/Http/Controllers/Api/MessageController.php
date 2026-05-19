@@ -22,8 +22,8 @@ class MessageController extends Controller
         $userId = $user->id;
 
         if ($user->role === 'admin') {
-            // Admin can chat with all vendors (active or suspended)
-            $contacts = User::where('role', 'vendor')->get();
+            // Admin can chat with all vendors and planners (active or suspended)
+            $contacts = User::whereIn('role', ['vendor', 'planner'])->get();
         } else if ($user->role === 'planner') {
             // Planners can chat with only those vendors whose services they have booked
             $eventIds = \App\Models\Event::where('user_id', $userId)->pluck('id');
@@ -35,6 +35,10 @@ class MessageController extends Controller
                 ->where('is_active', true)
                 ->with('vendor')
                 ->get();
+
+            // Always add Admins to the Planner's contact list so they can chat with Admin
+            $admins = User::where('role', 'admin')->get();
+            $contacts = $admins->concat($contacts);
         } else {
             // Vendors can chat with planners who have booked them or with whom they have a chat history
             $serviceIds = VendorService::where('user_id', $userId)->pluck('id');
@@ -118,6 +122,12 @@ class MessageController extends Controller
         }
 
         $sender = $request->user();
+        if ($sender->role === 'planner' && !$sender->is_active) {
+            $receiver = User::findOrFail($request->receiver_id);
+            if ($receiver->role !== 'admin') {
+                return response()->json(['message' => 'Your account is currently suspended. You can only chat with the administrator.'], 403);
+            }
+        }
         
         // Save the chat message
         $message = Message::create([
