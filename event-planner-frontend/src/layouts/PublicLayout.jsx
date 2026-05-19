@@ -7,7 +7,7 @@ const PublicLayout = () => {
   return (
     <div className="min-h-screen bg-background">
       {!isAuthPage && (
-        <nav className="absolute top-0 left-0 right-0 h-24 px-8 md:px-16 flex items-center justify-between bg-white/10 backdrop-blur-md border-b border-white/20 z-50">
+        <nav className="absolute top-0 left-0 right-0 h-24 px-8 md:px-16 flex items-center justify-between z-50 bg-transparent border-none">
           <Link to="/" className="text-3xl font-display font-bold text-primary drop-shadow-sm">Aura</Link>
 
           <div className="flex items-center">
