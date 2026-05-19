@@ -23,21 +23,23 @@ const PublicLayout = () => {
         <Outlet />
       </main>
 
-      <footer className="bg-white py-16 px-8 md:px-16 border-t border-gray-100">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 max-w-7xl mx-auto">
-          <div className="col-span-1 md:col-span-1">
-            <h3 className="text-2xl font-display font-bold text-primary mb-6">Aura</h3>
-            <p className="text-gray-500 leading-relaxed">
-              Experience the prestige of luxury event planning with our beautifully designed concierge dashboard.
-            </p>
+      {!['/', '/login', '/signup'].includes(location.pathname) && (
+        <footer className="bg-white py-16 px-8 md:px-16 border-t border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 max-w-7xl mx-auto">
+            <div className="col-span-1 md:col-span-1">
+              <h3 className="text-2xl font-display font-bold text-primary mb-6">Aura</h3>
+              <p className="text-gray-500 leading-relaxed">
+                Experience the prestige of luxury event planning with our beautifully designed concierge dashboard.
+              </p>
+            </div>
+            {/* Footer links placeholder */}
           </div>
-          {/* Footer links placeholder */}
-        </div>
-        <div className="mt-16 pt-8 border-t border-gray-100 text-center text-gray-400 text-sm">
-          &copy; 2026 Aura Events Dashboard. All rights reserved.
-          Raj Ranjan
-        </div>
-      </footer>
+          <div className="mt-16 pt-8 border-t border-gray-100 text-center text-gray-400 text-sm">
+            &copy; 2026 Aura Events Dashboard. All rights reserved.
+            Raj Ranjan
+          </div>
+        </footer>
+      )}
     </div>
   );
 };
