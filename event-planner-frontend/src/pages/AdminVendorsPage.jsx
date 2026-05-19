@@ -158,13 +158,23 @@ const AdminVendorsPage = () => {
                     </td>
                     <td className="py-4 px-4 text-right">
                       <div className="flex justify-end space-x-2">
-                        <button 
-                          onClick={() => handleToggleStatus(vendor)}
-                          className={`p-2 rounded-lg transition-colors ${vendor.is_active ? 'text-red-500 hover:bg-red-50' : 'text-green-500 hover:bg-green-50'}`}
-                          title={vendor.is_active ? 'Suspend Vendor' : 'Activate Vendor'}
-                        >
-                          {vendor.is_active ? <XCircle size={18} /> : <CheckCircle size={18} />}
-                        </button>
+                        {vendor.is_active ? (
+                          <button 
+                            onClick={() => handleToggleStatus(vendor)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Suspend Vendor"
+                          >
+                            <XCircle size={18} />
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => handleToggleStatus(vendor)}
+                            className="p-2 text-green-600 hover:bg-green-50 bg-green-50/50 rounded-lg transition-colors border border-green-200 shadow-sm"
+                            title="Reactivate Vendor"
+                          >
+                            <CheckCircle size={18} />
+                          </button>
+                        )}
                         <button className="p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-800 rounded-lg transition-colors" title="View Details">
                           <Eye size={18} />
                         </button>
