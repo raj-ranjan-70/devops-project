@@ -1,36 +1,14 @@
-version: '3.9'
-
 services:
 
   backend:
     build:
       context: ./event-planner-backend
+
     ports:
       - "8000:8000"
-    environment:
-      - APP_ENV=production
-      - APP_DEBUG=false
 
-      # Database
-      - DB_CONNECTION=mysql
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_DATABASE=event_planner_DB
-      - DB_USERNAME=event_user
-      - DB_PASSWORD=StrongPassword123
-
-      # Queue
-      - QUEUE_CONNECTION=database
-
-      # Mail Configuration
-      - MAIL_MAILER=smtp
-      - MAIL_HOST=smtp.gmail.com
-      - MAIL_PORT=587
-      - MAIL_USERNAME=rajranjan707077@gmail.com
-      - MAIL_PASSWORD=hlwvtjysqpuxhjjx
-      - MAIL_ENCRYPTION=tls
-      - MAIL_FROM_ADDRESS=rajranjan707077@gmail.com
-      - MAIL_FROM_NAME="Aura Events"
+    env_file:
+      - ./event-planner-backend/.env
 
     depends_on:
       db:
@@ -44,30 +22,8 @@ services:
 
     command: php artisan queue:work --tries=3 --timeout=90
 
-    environment:
-      - APP_ENV=production
-      - APP_DEBUG=false
-
-      # Database
-      - DB_CONNECTION=mysql
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_DATABASE=event_planner_DB
-      - DB_USERNAME=event_user
-      - DB_PASSWORD=StrongPassword123
-
-      # Queue
-      - QUEUE_CONNECTION=database
-
-      # Mail Configuration
-      - MAIL_MAILER=smtp
-      - MAIL_HOST=smtp.gmail.com
-      - MAIL_PORT=587
-      - MAIL_USERNAME=rajranjan707077@gmail.com
-      - MAIL_PASSWORD=hlwvtjysqpuxhjjx
-      - MAIL_ENCRYPTION=tls
-      - MAIL_FROM_ADDRESS=rajranjan707077@gmail.com
-      - MAIL_FROM_NAME="Aura Events"
+    env_file:
+      - ./event-planner-backend/.env
 
     depends_on:
       db:
