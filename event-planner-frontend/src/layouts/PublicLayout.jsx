@@ -32,7 +32,7 @@ const PublicLayout = () => {
             {/* Footer links placeholder */}
           </div>
           <div className="mt-16 pt-8 border-t border-gray-100 text-center text-gray-400 text-sm">
-            &copy; 2026 Aura Events Dashboard. All rights reserved.
+            &copy; 2026 Aura Events Planner Dashboard. All rights reserved.
             Raj Ranjan
           </div>
         </footer>
