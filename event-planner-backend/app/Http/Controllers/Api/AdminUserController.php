@@ -42,8 +42,8 @@ class AdminUserController extends Controller
         $updateData = collect($validated)->except('suspension_reason')->toArray();
         $user->update($updateData);
 
-        // Check if status is changed for a vendor
-        if (isset($validated['is_active']) && $user->role === 'vendor') {
+        // Check if status is changed for a vendor or a planner
+        if (isset($validated['is_active']) && ($user->role === 'vendor' || $user->role === 'planner')) {
             $newIsActive = $validated['is_active'];
             if ($oldIsActive && !$newIsActive) {
                 // Suspended: Send message from Admin

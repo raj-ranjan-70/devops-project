@@ -1,14 +1,23 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Search, MoreVertical, Trash2, Power, PowerOff } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, MoreVertical, Trash2, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import api from '../services/api';
 import useAuthStore from '../store/useAuthStore';
+import Toastify from 'toastify-js';
+import "toastify-js/src/toastify.css";
 
 const PlannersPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const { user: currentUser } = useAuthStore();
+
+  // Suspension modal and loader states
+  const [suspensionModalOpen, setSuspensionModalOpen] = useState(false);
+  const [selectedPlannerForSuspension, setSelectedPlannerForSuspension] = useState(null);
+  const [suspensionReason, setSuspensionReason] = useState('');
+  const [suspending, setSuspending] = useState(false);
+  const [updatingUserId, setUpdatingUserId] = useState(null); // button loading spinner state
 
   useEffect(() => {
     fetchUsers();
@@ -25,12 +34,82 @@ const PlannersPage = () => {
     }
   };
 
-  const handleToggleActive = async (userId, currentStatus) => {
+  const handleToggleStatus = (planner) => {
+    if (planner.is_active) {
+      setSelectedPlannerForSuspension(planner);
+      setSuspensionReason('');
+      setSuspensionModalOpen(true);
+    } else {
+      if (window.confirm(`Are you sure you want to reactivate ${planner.name}'s profile?`)) {
+        handleUpdateStatus(planner.id, true);
+      }
+    }
+  };
+
+  const handleUpdateStatus = async (plannerId, is_active) => {
+    setUpdatingUserId(plannerId);
     try {
-      await api.put(`/admin/users/${userId}`, { is_active: !currentStatus });
-      fetchUsers(); // Refresh the list
+      await api.put(`/admin/users/${plannerId}`, { is_active });
+      Toastify({
+        text: `Planner account reactivated successfully`,
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        style: {
+          background: "linear-gradient(135deg, #10b981, #059669)",
+          borderRadius: "16px",
+          boxShadow: "0 10px 15px -3px rgba(16, 185, 129, 0.2)",
+          fontFamily: "Outfit, Inter, sans-serif",
+          fontSize: "14px",
+          fontWeight: "600",
+          padding: "12px 24px",
+        }
+      }).showToast();
+      fetchUsers();
     } catch (error) {
       console.error('Failed to update planner status', error);
+      alert('Failed to reactivate planner. Please try again.');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const confirmSuspension = async () => {
+    if (!selectedPlannerForSuspension) return;
+    setSuspending(true);
+    setUpdatingUserId(selectedPlannerForSuspension.id);
+    try {
+      await api.put(`/admin/users/${selectedPlannerForSuspension.id}`, { 
+        is_active: false,
+        suspension_reason: suspensionReason.trim()
+      });
+      
+      Toastify({
+        text: `Planner account suspended successfully`,
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        style: {
+          background: "linear-gradient(135deg, #ef4444, #dc2626)",
+          borderRadius: "16px",
+          boxShadow: "0 10px 15px -3px rgba(239, 68, 68, 0.2)",
+          fontFamily: "Outfit, Inter, sans-serif",
+          fontSize: "14px",
+          fontWeight: "600",
+          padding: "12px 24px",
+        }
+      }).showToast();
+
+      fetchUsers();
+      setSuspensionModalOpen(false);
+      setSelectedPlannerForSuspension(null);
+      setSuspensionReason('');
+    } catch (error) {
+      console.error('Failed to suspend planner', error);
+      alert('Failed to suspend planner. Please try again.');
+    } finally {
+      setSuspending(false);
+      setUpdatingUserId(null);
     }
   };
 
@@ -126,13 +205,31 @@ const PlannersPage = () => {
                       <div className="flex justify-end space-x-2">
                         {user.id !== currentUser?.id && (
                           <>
-                            <button 
-                              onClick={() => handleToggleActive(user.id, user.is_active)}
-                              className={`p-2 rounded-lg transition-colors ${user.is_active ? 'text-red-500 hover:bg-red-50' : 'text-green-500 hover:bg-green-50'}`}
-                              title={user.is_active ? "Suspend User" : "Activate User"}
-                            >
-                              {user.is_active ? <PowerOff size={18} /> : <Power size={18} />}
-                            </button>
+                            {updatingUserId === user.id ? (
+                              <button 
+                                disabled
+                                className="p-2 rounded-lg bg-gray-50/50 border border-gray-100 text-gray-400"
+                              >
+                                <Loader2 size={18} className="animate-spin text-primary" />
+                              </button>
+                            ) : user.is_active ? (
+                              <button 
+                                onClick={() => handleToggleStatus(user)}
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Suspend Planner"
+                              >
+                                <XCircle size={18} />
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={() => handleToggleStatus(user)}
+                                className="p-2 text-green-600 hover:bg-green-50 bg-green-50/50 rounded-lg transition-colors border border-green-200 shadow-sm"
+                                title="Reactivate Planner"
+                              >
+                                <CheckCircle size={18} />
+                              </button>
+                            )}
+                            
                             <button 
                               onClick={() => handleDelete(user.id)}
                               className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -162,6 +259,63 @@ const PlannersPage = () => {
           </div>
         )}
       </div>
+
+      {/* Suspension Confirmation Modal */}
+      <AnimatePresence>
+        {suspensionModalOpen && selectedPlannerForSuspension && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative border border-gray-100"
+            >
+              <h3 className="text-xl font-display font-bold text-gray-800">Suspend Planner Profile</h3>
+              <p className="text-sm text-gray-500 mt-2">
+                Are you sure you want to suspend <strong className="text-gray-800 font-bold">{selectedPlannerForSuspension.name}</strong>?
+              </p>
+              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                This will temporarily disable their account, cancel any active admin partnerships, and send them a chat message indicating the reason.
+              </p>
+              
+              <div className="mt-4">
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
+                  Reason for Suspension
+                </label>
+                <textarea
+                  value={suspensionReason}
+                  onChange={(e) => setSuspensionReason(e.target.value)}
+                  placeholder="e.g. Terms of Service violation, suspicious activity, or user misconduct..."
+                  rows={4}
+                  className="w-full bg-gray-50 border-none rounded-2xl p-3.5 text-xs focus:ring-2 focus:ring-primary/20 text-gray-850 placeholder:text-gray-405 resize-none border border-gray-100"
+                  required
+                />
+              </div>
+              
+              <div className="mt-6 flex space-x-3 justify-end">
+                <button
+                  onClick={() => {
+                    setSuspensionModalOpen(false);
+                    setSelectedPlannerForSuspension(null);
+                    setSuspensionReason('');
+                  }}
+                  disabled={suspending}
+                  className="px-4 py-2.5 text-xs rounded-xl font-bold hover:bg-gray-100 transition-colors text-gray-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmSuspension}
+                  disabled={suspending || !suspensionReason.trim()}
+                  className="px-5 py-2.5 text-xs rounded-xl font-bold bg-red-600 hover:bg-red-700 transition-colors text-white shadow-lg shadow-red-600/20 flex items-center space-x-1.5 disabled:opacity-50"
+                >
+                  {suspending ? 'Suspending...' : 'Suspend Profile'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
