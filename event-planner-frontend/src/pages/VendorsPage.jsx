@@ -6,8 +6,14 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import { useForm } from 'react-hook-form';
+import useAuthStore from '../store/useAuthStore';
+import Toastify from 'toastify-js';
+import "toastify-js/src/toastify.css";
 
 const VendorsPage = () => {
+  const { user } = useAuthStore();
+  const isSuspended = user?.role === 'planner' && !user?.is_active;
+
   const [activeTab, setActiveTab] = useState('discover'); // 'discover' or 'bookings'
   const [services, setServices] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -252,6 +258,24 @@ const VendorsPage = () => {
                       
                       <button
                         onClick={() => {
+                          if (isSuspended) {
+                            Toastify({
+                              text: "Your account is currently suspended. You cannot book vendors. Please contact the administrator.",
+                              duration: 4500,
+                              gravity: "top",
+                              position: "center",
+                              style: {
+                                background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                                borderRadius: "16px",
+                                boxShadow: "0 10px 15px -3px rgba(239, 68, 68, 0.2)",
+                                fontFamily: "Outfit, Inter, sans-serif",
+                                fontSize: "14px",
+                                fontWeight: "600",
+                                padding: "12px 24px",
+                              }
+                            }).showToast();
+                            return;
+                          }
                           setSelectedService(service);
                           setIsBookModalOpen(true);
                         }}

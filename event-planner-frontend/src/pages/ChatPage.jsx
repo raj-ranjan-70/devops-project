@@ -2,10 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Send, Search, MessageSquare, Clock, ArrowLeft, 
-  Loader2, User, Sparkles 
+  Loader2, User, Sparkles, Lock
 } from 'lucide-react';
 import api from '../services/api';
 import useAuthStore from '../store/useAuthStore';
+import Toastify from 'toastify-js';
+import "toastify-js/src/toastify.css";
 
 const ChatPage = () => {
   const { user: currentUser } = useAuthStore();
@@ -18,6 +20,8 @@ const ChatPage = () => {
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+
+  const isSuspendedPlanner = currentUser?.role === 'planner' && !currentUser?.is_active;
   
   const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef(null);
@@ -67,6 +71,11 @@ const ChatPage = () => {
 
   // Poll messages when contact is selected
   useEffect(() => {
+    if (isSuspendedPlanner && selectedContact && selectedContact.role !== 'admin') {
+      setSelectedContact(null);
+      return;
+    }
+
     if (!selectedContact) {
       setMessages([]);
       if (pollingIntervalRef.current) {
@@ -183,8 +192,29 @@ const ChatPage = () => {
               return (
                 <button
                   key={contact.id}
-                  onClick={() => setSelectedContact(contact)}
+                  onClick={() => {
+                    if (isSuspendedPlanner && contact.role !== 'admin') {
+                      Toastify({
+                        text: "Your account is currently suspended. You can only chat with the administrator.",
+                        duration: 4000,
+                        gravity: "top",
+                        position: "center",
+                        style: {
+                          background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                          borderRadius: "16px",
+                          boxShadow: "0 10px 15px -3px rgba(239, 68, 68, 0.2)",
+                          fontFamily: "Outfit, Inter, sans-serif",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          padding: "12px 24px",
+                        }
+                      }).showToast();
+                      return;
+                    }
+                    setSelectedContact(contact);
+                  }}
                   className={`w-full p-3 rounded-2xl flex items-center space-x-3 text-left transition-all duration-300 relative
+                    ${isSuspendedPlanner && contact.role !== 'admin' ? 'opacity-60 cursor-not-allowed bg-transparent' : ''}
                     ${isSelected 
                       ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-[0.98]' 
                       : 'hover:bg-gray-50/80 text-gray-700 bg-transparent'}`}
@@ -196,8 +226,11 @@ const ChatPage = () => {
                   </div>
 
                   <div className="flex-grow min-w-0 pr-2">
-                    <p className={`text-xs font-bold truncate leading-tight ${isSelected ? 'text-white' : 'text-gray-800'}`}>
-                      {contact.vendor?.business_name || contact.name}
+                    <p className={`text-xs font-bold truncate leading-tight ${isSelected ? 'text-white' : 'text-gray-800'} flex items-center`}>
+                      <span className="truncate">{contact.vendor?.business_name || contact.name}</span>
+                      {isSuspendedPlanner && contact.role !== 'admin' && (
+                        <Lock size={12} className="ml-1.5 text-gray-400 shrink-0" />
+                      )}
                     </p>
                     <p className={`text-[10px] truncate mt-0.5 ${isSelected ? 'text-white/70' : 'text-gray-400'} flex items-center`}>
                       <span>

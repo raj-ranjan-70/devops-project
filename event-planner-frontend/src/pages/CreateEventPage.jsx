@@ -14,11 +14,36 @@ import {
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { useState } from 'react';
+import useAuthStore from '../store/useAuthStore';
 
 const CreateEventPage = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+
+  const isSuspended = user?.role === 'planner' && !user?.is_active;
+
+  if (isSuspended) {
+    return (
+      <div className="max-w-md mx-auto py-16 text-center space-y-6">
+        <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
+          <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-display font-bold text-gray-800">Account Suspended</h2>
+          <p className="text-sm text-gray-500 leading-relaxed animate-pulse">
+            You are currently suspended and cannot create new events. Please contact the administrator.
+          </p>
+        </div>
+        <Link to="/chat" className="elegant-button-primary inline-flex items-center">
+          Contact Admin
+        </Link>
+      </div>
+    );
+  }
 
   const minDateString = () => {
     const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);

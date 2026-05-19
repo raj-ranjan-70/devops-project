@@ -3,8 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Plus, Mail, Phone, X, Loader2 } from 'lucide-react';
 import api from '../services/api';
 import { useForm } from 'react-hook-form';
+import useAuthStore from '../store/useAuthStore';
+import Toastify from 'toastify-js';
+import "toastify-js/src/toastify.css";
 
 const GuestsPage = () => {
+  const { user } = useAuthStore();
+  const isSuspended = user?.role === 'planner' && !user?.is_active;
+
   const [guests, setGuests] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +59,30 @@ const GuestsPage = () => {
           <h1 className="text-4xl font-display font-bold">Guest Relations</h1>
           <p className="text-gray-500 mt-1">Manage your sophisticated guest lists and RSVPs</p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="elegant-button-primary flex items-center">
+        <button 
+          onClick={() => {
+            if (isSuspended) {
+              Toastify({
+                text: "Your account is currently suspended. You cannot add new guests. Please contact the administrator.",
+                duration: 4500,
+                gravity: "top",
+                position: "center",
+                style: {
+                  background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                  borderRadius: "16px",
+                  boxShadow: "0 10px 15px -3px rgba(239, 68, 68, 0.2)",
+                  fontFamily: "Outfit, Inter, sans-serif",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  padding: "12px 24px",
+                }
+              }).showToast();
+              return;
+            }
+            setIsModalOpen(true);
+          }} 
+          className="elegant-button-primary flex items-center"
+        >
           <Plus className="mr-2" /> Add Guest
         </button>
       </div>
