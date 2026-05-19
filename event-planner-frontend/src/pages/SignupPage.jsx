@@ -9,8 +9,6 @@ const SignupPage = () => {
   const { register: signup, isLoading, error } = useAuthStore();
   const navigate = useNavigate();
 
-  const selectedRole = watch('role', 'planner');
-
   const onSubmit = async (data) => {
     const success = await signup(data);
     if (success) {
@@ -86,29 +84,21 @@ const SignupPage = () => {
             <div className="space-y-1">
               <label className="block text-xs font-bold text-white/90">Account Type</label>
               <div className="grid grid-cols-2 gap-3">
-                <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-all ${
-                  selectedRole === 'planner' 
-                    ? 'border-[#b388ff] bg-[#b388ff]/15 shadow-md shadow-[#b388ff]/5' 
-                    : 'border-white/10 bg-white/5 hover:bg-white/10'
-                } text-white`}>
+                <label className="flex items-center p-3 border border-white/10 rounded-xl cursor-pointer bg-white/5 hover:bg-white/10 transition-all text-white">
                   <input
                     {...register('role')}
                     type="radio"
                     value="planner"
-                    className="mr-2 accent-[#b388ff] h-4 w-4 cursor-pointer"
+                    className="mr-2 accent-[#7c3aed] h-4 w-4 cursor-pointer"
                   />
                   <span className="font-bold text-xs text-white/90">Event Planner</span>
                 </label>
-                <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-all ${
-                  selectedRole === 'vendor' 
-                    ? 'border-[#b388ff] bg-[#b388ff]/15 shadow-md shadow-[#b388ff]/5' 
-                    : 'border-white/10 bg-white/5 hover:bg-white/10'
-                } text-white`}>
+                <label className="flex items-center p-3 border border-white/10 rounded-xl cursor-pointer bg-white/5 hover:bg-white/10 transition-all text-white">
                   <input
                     {...register('role')}
                     type="radio"
                     value="vendor"
-                    className="mr-2 accent-[#b388ff] h-4 w-4 cursor-pointer"
+                    className="mr-2 accent-[#7c3aed] h-4 w-4 cursor-pointer"
                   />
                   <span className="font-bold text-xs text-white/90">Service Vendor</span>
                 </label>
