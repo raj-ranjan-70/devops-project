@@ -198,6 +198,15 @@ class GuestController extends Controller
             'rsvp_responded_at' => now()
         ]);
 
+        // Send a beautiful confirmation email automatically upon acceptance
+        if ($status === 'confirmed' && !empty($guest->email)) {
+            try {
+                Mail::to($guest->email)->queue(new \App\Mail\RSVPConfirmationMail($guest));
+            } catch (\Exception $e) {
+                Log::error("Failed to queue RSVP confirmation email to {$guest->email}: " . $e->getMessage());
+            }
+        }
+
         Log::info("Guest {$guest->name} has successfully responded with status '{$status}' to Event: {$guest->event->title} via email CTA token.");
 
         return response()->json([
