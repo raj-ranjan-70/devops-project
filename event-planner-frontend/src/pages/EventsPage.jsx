@@ -21,7 +21,10 @@ const EventsPage = () => {
     const fetchEvents = async () => {
       try {
         const response = await api.get('/events');
-        setEvents(response.data);
+        const sorted = [...response.data].sort(
+          (a, b) => new Date(b.event_date) - new Date(a.event_date)
+        );
+        setEvents(sorted);
       } catch (error) {
         console.error('Failed to fetch events', error);
       } finally {
@@ -131,7 +134,7 @@ const EventsPage = () => {
                 <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
                   <div>
                     <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Budget</p>
-                    <p className="font-bold text-gray-800">${Number(event.budget).toLocaleString()}</p>
+                    <p className="font-bold text-gray-800">&#8377;{Number(event.budget_amount ?? event.budget?.total_budget ?? 0).toLocaleString('en-IN')}</p>
                   </div>
                   <Link to={`/events/${event.id}`} className="w-10 h-10 bg-primary/5 text-primary rounded-full flex items-center justify-center hover:bg-primary hover:text-white transition-all">
                     <ArrowUpRight size={20} />

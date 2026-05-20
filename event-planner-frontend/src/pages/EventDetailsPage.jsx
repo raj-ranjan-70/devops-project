@@ -6,7 +6,7 @@ import {
   ArrowLeft, 
   Calendar, 
   MapPin, 
-  DollarSign, 
+  IndianRupee, 
   Clock, 
   Users, 
   Plus, 
@@ -23,7 +23,9 @@ import {
   Award,
   ShieldAlert,
   Pencil,
-  Lock
+  Lock,
+  TrendingDown,
+  Download
 } from 'lucide-react';
 import api from '../services/api';
 import useAuthStore from '../store/useAuthStore';
@@ -93,7 +95,7 @@ const EventDetailsPage = () => {
     }
     setEditDuration(event.duration || 3);
     setEditVenue(event.venue || '');
-    setEditBudget(event.budget || 0);
+    setEditBudget(event.budget_amount ?? event.budget?.total_budget ?? 0);
     setEditDescription(event.description || '');
     setIsEditSpecModalOpen(true);
   };
@@ -111,7 +113,7 @@ const EventDetailsPage = () => {
         description: editDescription
       };
       const res = await api.put(`/events/${id}`, payload);
-      setEvent(res.data);
+      await fetchEventDetails();
       showToast('Event specifications updated successfully!');
       setIsEditSpecModalOpen(false);
     } catch (err) {
@@ -159,6 +161,29 @@ const EventDetailsPage = () => {
       setVendorServices(res.data);
     } catch (err) {
       console.error('Failed to fetch marketplace services', err);
+    }
+  };
+
+  const handleDownloadInvoice = async (paymentId) => {
+    try {
+      const response = await api.get(`/payments/${paymentId}/invoice`, {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `INV-${String(paymentId).padStart(6, '0')}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      showToast('📄 Invoice PDF downloaded successfully!');
+    } catch (err) {
+      console.error('Failed to download invoice', err);
+      showToast('Could not retrieve invoice PDF. Please try again later.', 'error');
     }
   };
 
@@ -550,14 +575,62 @@ const EventDetailsPage = () => {
 
                 <div className="flex items-center space-x-4">
                   <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-                    <DollarSign size={20} />
+                    <IndianRupee size={20} />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Budget limit</p>
-                    <p className="font-bold text-gray-800">${parseFloat(event.budget || 0).toLocaleString()}</p>
+                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Budget</p>
+                    <p className="font-bold text-gray-800">₹{parseFloat(event.budget_amount ?? event.budget?.total_budget ?? 0).toLocaleString('en-IN')}</p>
                   </div>
                 </div>
               </div>
+
+              {/* Remaining Budget Section */}
+              {(() => {
+                // event.budget is the Budget relation object {total_budget, spent_amount}
+                // event.budget_amount is the raw budget column from events table
+                const totalBudget = parseFloat(event.budget?.total_budget ?? event.budget_amount ?? 0);
+                const spentAmount = parseFloat(event.budget?.spent_amount ?? 0);
+                const remainingAmount = Math.max(0, totalBudget - spentAmount);
+                const remainingPct = totalBudget > 0 ? (remainingAmount / totalBudget) * 100 : 100;
+                const pctColor = remainingPct >= 60
+                  ? 'text-emerald-600'
+                  : remainingPct >= 30
+                    ? 'text-amber-500'
+                    : 'text-rose-600';
+                const barColor = remainingPct >= 60
+                  ? 'bg-emerald-500'
+                  : remainingPct >= 30
+                    ? 'bg-amber-400'
+                    : 'bg-rose-500';
+
+                if (totalBudget <= 0) return null;
+
+                return (
+                  <div className="pt-6 border-t border-gray-100">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <TrendingDown size={16} className={pctColor} />
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Remaining Budget</p>
+                      </div>
+                      <span className={`text-sm font-bold ${pctColor}`}>
+                        ₹{remainingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span className="ml-2 text-xs font-bold">({remainingPct.toFixed(1)}%)</span>
+                      </span>
+                    </div>
+                    {/* Progress bar */}
+                    <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ${barColor}`}
+                        style={{ width: `${remainingPct}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1.5">
+                      <span className="text-[10px] text-gray-400">Spent: ₹{spentAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-[10px] text-gray-400">Total: ₹{totalBudget.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {event.description && (
                 <div className="pt-6 border-t border-gray-100">
@@ -608,21 +681,48 @@ const EventDetailsPage = () => {
               
               {bookings.length > 0 ? (
                 <div className="space-y-4">
-                  {bookings.map((booking) => (
-                    <div key={booking.id} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-primary text-sm">{booking.vendor_service?.business_name}</p>
-                        <p className="text-[10px] text-gray-400 capitalize font-bold">{booking.vendor_service?.category}</p>
+                  {bookings.map((booking) => {
+                    const isPaid = booking.payments?.some(p => p.status === 'paid');
+                    return (
+                      <div key={booking.id} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-primary text-sm">{booking.vendor_service?.business_name}</p>
+                          <p className="text-[10px] text-gray-400 capitalize font-bold">{booking.vendor_service?.category}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {isPaid ? (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Paid Against Service
+                              </span>
+                              <button
+                                onClick={() => handleDownloadInvoice(booking.payments.find(p => p.status === 'paid')?.id)}
+                                className="p-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                                title="Download Invoice"
+                              >
+                                <Download size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-2">
+                              <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
+                                booking.status === 'accepted' ? 'bg-emerald-50 text-emerald-700' :
+                                booking.status === 'rejected' ? 'bg-rose-50 text-rose-700' :
+                                'bg-amber-50 text-amber-700 animate-pulse'
+                              }`}>
+                                {booking.status}
+                              </span>
+                              {!isPaid && booking.status === 'accepted' && (
+                                <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                                  Payment Pending
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
-                        booking.status === 'accepted' ? 'bg-emerald-50 text-emerald-700' :
-                        booking.status === 'rejected' ? 'bg-rose-50 text-rose-700' :
-                        'bg-amber-50 text-amber-700 animate-pulse'
-                      }`}>
-                        {booking.status}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
@@ -924,7 +1024,7 @@ const EventDetailsPage = () => {
 
                 {/* Price ceiling input */}
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="number"
                     placeholder="Max price limit..."
@@ -991,7 +1091,7 @@ const EventDetailsPage = () => {
                     <div className="p-6 pt-0 border-t border-gray-50 mt-4 flex items-center justify-between">
                       <div>
                         <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Starting rate</p>
-                        <p className="text-lg font-bold text-gray-800">${parseFloat(service.starting_price).toLocaleString()}</p>
+                        <p className="text-lg font-bold text-gray-800">₹{parseFloat(service.starting_price).toLocaleString('en-IN')}</p>
                       </div>
                       {isCompleted ? (
                         <button 
@@ -1077,7 +1177,7 @@ const EventDetailsPage = () => {
 
                 <div className="bg-primary/5 p-4 rounded-2xl flex items-start space-x-3 text-xs text-primary/90 leading-relaxed border border-primary/10">
                   <Info size={16} className="shrink-0 mt-0.5 text-primary" />
-                  <span>The curator starting rate of ${parseFloat(selectedService.starting_price).toLocaleString()} will be automatically factored into your event budget layout pending the vendor's secure acceptance.</span>
+                  <span>The curator starting rate of ₹{parseFloat(selectedService.starting_price).toLocaleString('en-IN')} will be automatically factored into your event budget layout pending the vendor's secure acceptance.</span>
                 </div>
 
                 {/* Footer buttons */}

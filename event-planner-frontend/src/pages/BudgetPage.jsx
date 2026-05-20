@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, CreditCard, ArrowUpRight, DollarSign } from 'lucide-react';
+import { Wallet, TrendingUp, CreditCard, ArrowUpRight, IndianRupee } from 'lucide-react';
 import api from '../services/api';
 
 const BudgetPage = () => {
@@ -33,7 +33,7 @@ const BudgetPage = () => {
           <div className="flex justify-between items-start mb-12">
             <div>
               <p className="text-primary-container font-bold uppercase tracking-widest text-sm mb-2">Total Managed Investment</p>
-              <h2 className="text-6xl font-display font-bold">$0.00</h2>
+              <h2 className="text-6xl font-display font-bold">₹0.00</h2>
             </div>
             <Wallet size={48} className="opacity-20" />
           </div>
@@ -41,11 +41,11 @@ const BudgetPage = () => {
           <div className="grid grid-cols-2 gap-8 pt-8 border-t border-white/10">
             <div>
               <p className="text-primary-container text-xs font-bold uppercase tracking-widest mb-1">Spent to Date</p>
-              <p className="text-2xl font-bold font-display text-white">$0.00</p>
+              <p className="text-2xl font-bold font-display text-white">₹0.00</p>
             </div>
             <div>
               <p className="text-primary-container text-xs font-bold uppercase tracking-widest mb-1">Remaining Balance</p>
-              <p className="text-2xl font-bold font-display text-white">$0.00</p>
+              <p className="text-2xl font-bold font-display text-white">₹0.00</p>
             </div>
           </div>
         </div>

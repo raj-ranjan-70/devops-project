@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Truck, Plus, Star, MapPin, Phone, X, Loader2, Search, 
-  SlidersHorizontal, Calendar, Info, CheckCircle2, MessageSquare, DollarSign, Clock, AlertTriangle 
+  SlidersHorizontal, Calendar, Info, CheckCircle2, MessageSquare, IndianRupee, Clock, AlertTriangle 
 } from 'lucide-react';
 import api from '../services/api';
 import { useForm } from 'react-hook-form';
@@ -193,7 +193,7 @@ const VendorsPage = () => {
 
               {/* Budget Limit */}
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input
                   type="number"
                   placeholder="Max starting price..."
@@ -253,7 +253,7 @@ const VendorsPage = () => {
                     <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
                       <div>
                         <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Starting Price</p>
-                        <p className="text-lg font-bold text-primary">${parseFloat(service.starting_price).toLocaleString()}</p>
+                        <p className="text-lg font-bold text-primary">₹{parseFloat(service.starting_price).toLocaleString('en-IN')}</p>
                       </div>
                       
                       <button
@@ -388,7 +388,7 @@ const VendorsPage = () => {
               <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 sticky top-0 z-10">
                 <div>
                   <h2 className="text-2xl font-display font-bold">Book {selectedService.business_name}</h2>
-                  <p className="text-xs text-gray-400 mt-1">Send a booking proposal to lock in starting price: ${parseFloat(selectedService.starting_price).toLocaleString()}</p>
+                  <p className="text-xs text-gray-400 mt-1">Send a booking proposal to lock in starting price: ₹{parseFloat(selectedService.starting_price).toLocaleString('en-IN')}</p>
                 </div>
                 <button type="button" onClick={() => setIsBookModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                   <X size={24} />

@@ -19,4 +19,9 @@ class ServiceBooking extends Model
     {
         return $this->belongsTo(VendorService::class);
     }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
 }

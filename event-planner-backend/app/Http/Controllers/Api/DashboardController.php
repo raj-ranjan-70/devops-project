@@ -85,9 +85,14 @@ class DashboardController extends Controller
         })->count();
 
         $recentEvents = Event::where('user_id', $userId)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('event_date', 'desc')
             ->limit(5)
-            ->get();
+            ->get()
+            ->map(function ($event) {
+                $data = $event->toArray();
+                $data['budget_amount'] = $event->getAttributes()['budget'] ?? 0;
+                return $data;
+            });
 
         return response()->json([
             'stats' => [

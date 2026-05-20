@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Truck, Plus, Star, MapPin, Edit3, Trash2, X, Loader2, 
-  Info, Sparkles, DollarSign, ToggleLeft, ToggleRight, Check 
+  Info, Sparkles, IndianRupee, ToggleLeft, ToggleRight, Check 
 } from 'lucide-react';
 import api from '../services/api';
 import { useForm } from 'react-hook-form';
@@ -162,7 +162,7 @@ const VendorServicesPage = () => {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Starting Price</p>
-                      <p className="text-lg font-bold text-primary">${parseFloat(service.starting_price).toLocaleString()}</p>
+                      <p className="text-lg font-bold text-primary">&#8377;{parseFloat(service.starting_price).toLocaleString('en-IN')}</p>
                     </div>
 
                     <button 
@@ -274,9 +274,9 @@ const VendorServicesPage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Starting Price ($)</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Starting Price (&#8377;)</label>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                       <input
                         type="number"
                         step="0.01"

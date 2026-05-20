@@ -9,7 +9,7 @@ class Message extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['sender_id', 'receiver_id', 'message', 'is_read'];
+    protected $fillable = ['sender_id', 'receiver_id', 'message', 'is_read', 'type', 'payment_id'];
 
     /**
      * Relationship to the sender of the message.
@@ -26,4 +26,13 @@ class Message extends Model
     {
         return $this->belongsTo(User::class, 'receiver_id');
     }
+
+    /**
+     * Relationship to the associated payment request (if any).
+     */
+    public function payment()
+    {
+        return $this->belongsTo(Payment::class, 'payment_id');
+    }
+
 }

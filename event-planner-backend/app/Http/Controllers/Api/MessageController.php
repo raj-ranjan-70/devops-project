@@ -96,6 +96,7 @@ class MessageController extends Controller
                 $q->where('sender_id', $receiverId)->where('receiver_id', $authUserId);
             })
             ->orderBy('created_at', 'asc')
+            ->with('payment.event', 'payment.serviceBooking.vendorService')
             ->get();
 
         // Mark incoming messages in this thread as read

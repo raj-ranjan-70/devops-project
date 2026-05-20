@@ -76,7 +76,7 @@ class MarketplaceController extends Controller
         $userId = $request->user()->id;
         $bookings = ServiceBooking::whereHas('event', function($query) use ($userId) {
             $query->where('user_id', $userId);
-        })->with(['event', 'vendorService.user'])->get();
+        })->with(['event', 'vendorService.user', 'payments'])->get();
 
         return response()->json($bookings);
     }

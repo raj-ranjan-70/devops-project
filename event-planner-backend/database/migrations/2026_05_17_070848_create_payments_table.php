@@ -13,12 +13,16 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('event_id')->constrained()->onDelete('cascade');
-            $table->foreignId('vendor_id')->constrained()->onDelete('cascade');
+            $table->foreignId('service_booking_id')->constrained()->onDelete('cascade');
+            $table->string('razorpay_order_id')->nullable();
+            $table->string('razorpay_payment_id')->nullable()->unique();
+            $table->string('currency')->default('INR');
             $table->decimal('amount', 10, 2);
-            $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');
+            $table->enum('status', ['pending', 'paid', 'failed'])->default('pending');
             $table->timestamp('payment_date')->nullable();
+            $table->text('gateway_response')->nullable();
             $table->timestamps();
+            $table->index('status');
         });
     }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, MapPin, DollarSign, Calendar as CalendarIcon, Trash2, Eye, ShieldAlert } from 'lucide-react';
+import { Search, MapPin, IndianRupee, Calendar as CalendarIcon, Trash2, Eye, ShieldAlert } from 'lucide-react';
 import api from '../services/api';
 
 const AdminEventsPage = () => {
@@ -114,7 +114,7 @@ const AdminEventsPage = () => {
                     </td>
                     <td className="py-4 px-4">
                       <div className="text-sm text-gray-600 space-y-1">
-                        <p className="flex items-center"><DollarSign size={14} className="mr-1"/> {Number(event.budget || 0).toLocaleString()}</p>
+                        <p className="flex items-center"><IndianRupee size={14} className="mr-1"/> {Number(event.budget || 0).toLocaleString('en-IN')}</p>
                         <p className="flex items-center"><CalendarIcon size={14} className="mr-1"/> {event.event_date ? new Date(event.event_date).toLocaleDateString() : 'TBD'}</p>
                       </div>
                     </td>

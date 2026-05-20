@@ -57,7 +57,10 @@ class EventController extends Controller
     public function show(Event $event)
     {
         $this->authorize('view', $event);
-        return response()->json($event->load(['budget', 'guests', 'vendors', 'tasks', 'timelines']));
+        $event->load(['budget', 'guests', 'vendors', 'tasks', 'timelines']);
+        $data = $event->toArray();
+        $data['budget_amount'] = $event->getAttributes()['budget'] ?? 0;
+        return response()->json($data);
     }
 
     public function update(Request $request, Event $event)

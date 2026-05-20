@@ -9,7 +9,7 @@ class Notification extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'title', 'message', 'type', 'is_read'];
+    protected $fillable = ['user_id', 'title', 'message', 'type', 'is_read', 'payment_id'];
 
     public function user()
     {

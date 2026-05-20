@@ -9,7 +9,17 @@ class EventService
 {
     public function getAllEvents($userId)
     {
-        return Event::where('user_id', $userId)->with(['budget', 'guests', 'vendors'])->get();
+        return Event::where('user_id', $userId)
+            ->with(['budget', 'guests', 'vendors'])
+            ->orderBy('event_date', 'desc')
+            ->get()
+            ->map(function ($event) {
+                $data = $event->toArray();
+                // Expose the raw budget column amount separately to avoid
+                // collision with the 'budget' relation key in the JSON
+                $data['budget_amount'] = $event->getAttributes()['budget'] ?? 0;
+                return $data;
+            });
     }
 
     public function createEvent(array $data)

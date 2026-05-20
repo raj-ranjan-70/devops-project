@@ -19,7 +19,14 @@ const PlannerDashboard = () => {
     const fetchDashboard = async () => {
       try {
         const response = await api.get('/dashboard');
-        setData(response.data);
+        const dashData = response.data;
+        // Sort recent_events farthest date first
+        if (dashData?.recent_events) {
+          dashData.recent_events = [...dashData.recent_events].sort(
+            (a, b) => new Date(b.event_date) - new Date(a.event_date)
+          );
+        }
+        setData(dashData);
       } catch (error) {
         console.error('Failed to fetch dashboard data', error);
       } finally {
@@ -126,7 +133,7 @@ const PlannerDashboard = () => {
                         </span>
                       );
                     })()}
-                    <p className="text-sm font-bold text-gray-800 mt-2">${Number(event.budget).toLocaleString()}</p>
+                    <p className="text-sm font-bold text-gray-800 mt-2">&#8377;{Number(event.budget_amount ?? event.budget?.total_budget ?? 0).toLocaleString('en-IN')}</p>
                   </div>
                 </Link>
               ))

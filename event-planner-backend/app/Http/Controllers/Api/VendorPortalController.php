@@ -104,7 +104,7 @@ class VendorPortalController extends Controller
         $serviceIds = VendorService::where('user_id', $userId)->pluck('id');
         
         $bookings = ServiceBooking::whereIn('vendor_service_id', $serviceIds)
-            ->with(['event', 'vendorService'])
+            ->with(['event', 'vendorService', 'payments'])
             ->orderBy('created_at', 'desc')
             ->get();
 

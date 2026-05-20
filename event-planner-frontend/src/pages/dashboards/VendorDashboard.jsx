@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CalendarCheck, DollarSign, Star, Briefcase, ChevronRight, Loader2, Info } from 'lucide-react';
+import { CalendarCheck, IndianRupee, Star, Briefcase, ChevronRight, Loader2, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
 import api from '../../services/api';
@@ -50,7 +50,7 @@ const VendorDashboard = () => {
   const stats = [
     { label: 'Active Bookings', value: data?.stats?.active_bookings ?? 0, icon: CalendarCheck, color: 'bg-green-100 text-green-600' },
     { label: 'Pending Requests', value: data?.stats?.pending_requests ?? 0, icon: Briefcase, color: 'bg-yellow-100 text-yellow-600' },
-    { label: 'Total Earnings', value: `$${(data?.stats?.total_earnings ?? 0).toLocaleString()}`, icon: DollarSign, color: 'bg-blue-100 text-blue-600' },
+    { label: 'Total Earnings', value: `₹${(data?.stats?.total_earnings ?? 0).toLocaleString('en-IN')}`, icon: IndianRupee, color: 'bg-blue-100 text-blue-600' },
     { label: 'Average Rating', value: Number(data?.stats?.average_rating ?? 5.0).toFixed(1), icon: Star, color: 'bg-gold/10 text-gold' },
   ];
 
@@ -182,7 +182,7 @@ const VendorDashboard = () => {
                     <div className="min-w-0 flex-1 pr-2">
                       <p className="font-bold text-gray-800 text-sm truncate">{svc.business_name}</p>
                       <p className="text-[10px] text-gray-400 font-medium truncate mt-0.5">
-                        {svc.category} • ${(svc.starting_price ?? 0).toLocaleString()}
+                        {svc.category} • ₹{(svc.starting_price ?? 0).toLocaleString('en-IN')}
                       </p>
                     </div>
                     <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${svc.is_available ? 'bg-green-500' : 'bg-gray-300'}`}></span>

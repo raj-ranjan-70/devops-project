@@ -10,10 +10,13 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\MarketplaceController;
 use App\Http\Controllers\Api\VendorPortalController;
 use App\Http\Controllers\Api\MessageController;
+use App\Http\Controllers\Api\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/payments/webhook', [PaymentController::class, 'handleWebhook']);
+
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -56,4 +59,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+
+    // Payment routes
+    Route::post('/payments/request', [PaymentController::class, 'requestPayment']);
+    Route::post('/payments/create-order', [PaymentController::class, 'createOrder']);
+    Route::post('/payments/verify', [PaymentController::class, 'verifyPayment']);
+    Route::post('/payments/fail', [PaymentController::class, 'failPayment']);
+    Route::get('/payments/planner-history', [PaymentController::class, 'plannerHistory']);
+    Route::get('/payments/vendor-history', [PaymentController::class, 'vendorHistory']);
+    Route::get('/payments/{id}', [PaymentController::class, 'show']);
+    Route::get('/payments/{id}/invoice', [PaymentController::class, 'downloadInvoice']);
 });
+

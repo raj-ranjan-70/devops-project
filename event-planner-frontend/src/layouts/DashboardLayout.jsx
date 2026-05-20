@@ -9,10 +9,14 @@ import {
   Settings, 
   LogOut,
   Bell,
-  MessageSquare
+  MessageSquare,
+  CreditCard,
+  Loader2
 } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 import api from '../services/api';
+import Toastify from 'toastify-js';
+import "toastify-js/src/toastify.css";
 
 const DashboardLayout = () => {
   const { user, logout, fetchUser } = useAuthStore();
@@ -22,6 +26,7 @@ const DashboardLayout = () => {
   const [notifications, setNotifications] = useState([]);
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const [payingNotificationId, setPayingNotificationId] = useState(null);
 
   const fetchNotifications = async () => {
     try {
@@ -60,9 +65,129 @@ const DashboardLayout = () => {
       if (type === 'message') {
         setShowNotificationsDropdown(false);
         navigate('/chat');
+      } else if (type === 'payment') {
+        setShowNotificationsDropdown(false);
+        navigate('/payments');
       }
     } catch (error) {
       console.error('Failed to mark notification as read', error);
+    }
+  };
+
+  const handlePayDirectly = async (e, notif) => {
+    e.stopPropagation(); // Stop click from bubbling to mark as read
+    if (payingNotificationId) return;
+    
+    const paymentId = notif.payment_id;
+    if (!paymentId) return;
+
+    setPayingNotificationId(notif.id);
+    try {
+      // 1. Create Razorpay order on backend
+      const orderResponse = await api.post('/payments/create-order', {
+        payment_id: paymentId
+      });
+
+      const { order_id, amount, currency, key_id } = orderResponse.data;
+
+      // 2. Configure Razorpay checkout options
+      const options = {
+        key: key_id,
+        amount: amount,
+        currency: currency,
+        name: "Aura Events Platform",
+        description: `Payment for service request`,
+        order_id: order_id,
+        retry: {
+          enabled: false
+        },
+        handler: async function (response) {
+          setPayingNotificationId(notif.id);
+          try {
+            // 3. Verify Razorpay signature on backend
+            await api.post('/payments/verify', {
+              payment_id: paymentId,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature
+            });
+
+            Toastify({
+              text: "🎉 Payment processed and completed successfully!",
+              duration: 5000,
+              style: { 
+                background: "linear-gradient(135deg, #10b981, #059669)",
+                borderRadius: "16px",
+                fontWeight: "bold"
+              }
+            }).showToast();
+
+            // Mark notification as read
+            await api.patch(`/notifications/${notif.id}/read`);
+            fetchNotifications();
+          } catch (verificationError) {
+            console.error('Signature verification failed', verificationError);
+            Toastify({
+              text: "Payment verification failed. Please contact admin.",
+              duration: 5000,
+              style: { background: "linear-gradient(135deg, #ef4444, #dc2626)" }
+            }).showToast();
+          } finally {
+            setPayingNotificationId(null);
+          }
+        },
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+        },
+        theme: {
+          color: "#EC4899", // Premium pink / primary theme accent
+        },
+        modal: {
+          ondismiss: function () {
+            setPayingNotificationId(null);
+            Toastify({
+              text: "Transaction cancelled by user.",
+              duration: 3000,
+              style: { background: "linear-gradient(135deg, #6b7280, #4b5563)" }
+            }).showToast();
+          }
+        }
+      };
+
+      // 3. Open Razorpay Popup
+      const rzp = new window.Razorpay(options);
+      
+      rzp.on('payment.failed', async function (response) {
+        console.error('Payment failure event:', response.error);
+        try {
+          await api.post('/payments/fail', {
+            payment_id: paymentId,
+            error_message: response.error?.description || 'Payment failed during checkout.'
+          });
+
+          Toastify({
+            text: `❌ Payment failed: ${response.error?.description || 'Transaction declined.'}`,
+            duration: 5000,
+            style: { background: "linear-gradient(135deg, #ef4444, #dc2626)" }
+          }).showToast();
+        } catch (failError) {
+          console.error('Failed to notify backend of payment failure', failError);
+        } finally {
+          setPayingNotificationId(null);
+        }
+      });
+
+      rzp.open();
+
+    } catch (err) {
+      console.error('Failed to initiate checkout from notification', err);
+      Toastify({
+        text: err.response?.data?.message || "Failed to contact payment gateway.",
+        duration: 4000,
+        style: { background: "linear-gradient(135deg, #ef4444, #dc2626)" }
+      }).showToast();
+      setPayingNotificationId(null);
     }
   };
 
@@ -97,6 +222,7 @@ const DashboardLayout = () => {
           { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
           { name: 'Services', path: '/services', icon: Truck },
           { name: 'Bookings', path: '/bookings', icon: Calendar },
+          { name: 'Payments', path: '/payments', icon: CreditCard },
           { name: 'Messages', path: '/chat', icon: MessageSquare },
         ];
       case 'planner':
@@ -105,6 +231,7 @@ const DashboardLayout = () => {
           { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
           { name: 'Events', path: '/events', icon: Calendar },
           { name: 'Budget', path: '/budget', icon: Wallet },
+          { name: 'Payments', path: '/payments', icon: CreditCard },
           { name: 'Messages', path: '/chat', icon: MessageSquare },
         ];
     }
@@ -151,7 +278,7 @@ const DashboardLayout = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Navbar */}
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-10">
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-20">
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-display font-semibold text-gray-800">
               {navItems.find(n => n.path === location.pathname)?.name || 'Dashboard'}
@@ -204,9 +331,28 @@ const DashboardLayout = () => {
                             <p className="text-[10px] text-gray-400 line-clamp-2 leading-relaxed">
                               {notif.message}
                             </p>
-                            <span className="text-[9px] text-gray-300 block">
+                            <span className="text-[9px] text-gray-300 block mb-1">
                               {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
+                            {notif.payment_id && !notif.is_read && (
+                              <button
+                                onClick={(e) => handlePayDirectly(e, notif)}
+                                disabled={payingNotificationId === notif.id}
+                                className="mt-1.5 flex items-center space-x-1 bg-primary text-white font-bold text-[10px] px-2.5 py-1 rounded-lg hover:bg-primary/95 transition-all shadow-sm disabled:opacity-50"
+                              >
+                                {payingNotificationId === notif.id ? (
+                                  <>
+                                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                    <span>Processing...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <CreditCard className="w-2.5 h-2.5" />
+                                    <span>Click to pay</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
                           </div>
                           {!notif.is_read && (
                             <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0 animate-pulse"></span>
