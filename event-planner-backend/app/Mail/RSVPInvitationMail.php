@@ -23,6 +23,7 @@ class RSVPInvitationMail extends Mailable implements ShouldQueue
 
     public $guest;
     public $event;
+    public $frontendUrl;
 
     /**
      * Create a new message instance.
@@ -31,6 +32,7 @@ class RSVPInvitationMail extends Mailable implements ShouldQueue
     {
         $this->guest = $guest;
         $this->event = $guest->event;
+        $this->frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
     }
 
     /**

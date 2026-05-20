@@ -212,10 +212,8 @@
                 </p>
 
                 <div class="cta-container">
-                    <a href="{{ url('/public/rsvp/' . $guest->id . '/confirmed') }}" class="btn btn-accept">Accept
-                        Invitation</a>
-                    <a href="{{ url('/public/rsvp/' . $guest->id . '/declined') }}" class="btn btn-decline">Decline
-                        Invitation</a>
+                    <a href="{{ $frontendUrl }}/rsvp/{{ $guest->rsvp_token }}/accept" class="btn btn-accept">Accept Invitation</a>
+                    <a href="{{ $frontendUrl }}/rsvp/{{ $guest->rsvp_token }}/decline" class="btn btn-decline">Decline Invitation</a>
                 </div>
             </div>
 

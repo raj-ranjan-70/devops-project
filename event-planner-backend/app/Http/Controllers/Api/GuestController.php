@@ -153,23 +153,64 @@ class GuestController extends Controller
 
     /**
      * Handle public single-click RSVP response actions from email CTAs (Accept/Decline)
+     * Secure token-based API endpoint
      */
-    public function publicRsvp(Request $request, Guest $guest, $status)
+    public function publicRsvp(Request $request, $token, $action)
     {
-        if (!in_array($status, ['confirmed', 'declined'])) {
-            abort(404, 'Invalid RSVP status');
+        if (!in_array($action, ['accept', 'decline'])) {
+            return response()->json([
+                'error' => 'invalid_action',
+                'message' => 'The requested RSVP action is invalid.'
+            ], 400);
         }
 
-        // Update the guest status directly in the database
-        $guest->update(['rsvp_status' => $status]);
+        // Secure token lookup
+        $guest = Guest::where('rsvp_token', $token)->first();
 
-        Log::info("Guest {$guest->name} has successfully responded with status '{$status}' to Event: {$guest->event->title} via email CTA.");
+        if (!$guest) {
+            return response()->json([
+                'error' => 'invalid_token',
+                'message' => 'This RSVP invitation link is invalid or has expired.'
+            ], 404);
+        }
 
-        // Return a gorgeous visual response view
-        return view('emails.rsvp-public-response', [
-            'guest' => $guest,
-            'event' => $guest->event,
-            'status' => $status
+        // Replay protection - Prevent overwriting an already recorded response
+        if ($guest->rsvp_responded_at !== null) {
+            return response()->json([
+                'error' => 'already_responded',
+                'message' => 'You have already responded to this invitation.',
+                'guest' => [
+                    'name' => $guest->name,
+                    'rsvp_status' => $guest->rsvp_status
+                ],
+                'event' => [
+                    'title' => $guest->event->title
+                ]
+            ], 422);
+        }
+
+        // Map accept/decline action to Laravel event database status
+        $status = ($action === 'accept') ? 'confirmed' : 'declined';
+
+        // Perform instant atomic update
+        $guest->update([
+            'rsvp_status' => $status,
+            'rsvp_responded_at' => now()
+        ]);
+
+        Log::info("Guest {$guest->name} has successfully responded with status '{$status}' to Event: {$guest->event->title} via email CTA token.");
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Your response has been recorded successfully.',
+            'status' => $status,
+            'guest' => [
+                'name' => $guest->name,
+                'rsvp_status' => $guest->rsvp_status
+            ],
+            'event' => [
+                'title' => $guest->event->title
+            ]
         ]);
     }
 }

@@ -21,10 +21,14 @@ import VendorServicesPage from '../pages/VendorServicesPage';
 import VendorBookingsPage from '../pages/VendorBookingsPage';
 import ChatPage from '../pages/ChatPage';
 import PaymentsPage from '../pages/PaymentsPage';
+import RSVPProcessingPage from '../pages/RSVPProcessingPage';
 
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* Public Standalone RSVP Redirection Processing Page */}
+      <Route path="/rsvp/:token/:action" element={<RSVPProcessingPage />} />
+
       {/* Public Routes */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<LandingPage />} />
