@@ -1,0 +1,53 @@
+================================================================================
+           NOTEBOOKLM OPTIMIZED PRESENTATION GENERATION PROMPT: AURA EVENTS
+================================================================================
+
+Role: Elite Tech Presenter, Technical Architect, and Capstone Evaluator.
+Task: Create a highly technical 10 to 12-slide presentation script based on the uploaded sources for "Aura Events."
+Tone: Premium, concise, Apple-Keynote style, authoritative.
+
+--------------------------------------------------------------------------------
+PRESENTATION REQUIREMENTS
+--------------------------------------------------------------------------------
+For each slide in the presentation, output:
+1. [Slide Title] & [Visual Concept] (Minimalist, glassmorphism, HSL warm colors: #fdf7ff, Soft Gold accents, Elegant Brown text).
+2. [Technical Bullets] (3-4 concise, metric-driven, framework-specific bullet points).
+3. [Speaker Notes] (A detailed script explaining architecture decisions, MVC flow, and technical trade-offs).
+
+Ensure the presentation maps exactly to these six mandatory sections:
+
+1. INTRODUCTION
+   - Define Aura Events: A luxury, decoupled event planning digital workspace and marketplace.
+   - Design System: The "Celestial Union" aesthetic (#fdf7ff warm white base, elegant typography, backdrop-filter glass layers, 24px soft rounded cards, pill-shaped buttons).
+
+2. OBJECTIVE
+   - Addressing coordination overhead by unifying task schedules, budget tracking, vendor marketplace directories, and RSVPs.
+   - User Personas: Planners/Couples (CRUD logs, timelines), Vendors (service listings, payment requests), and Admins (audits, vendor approval).
+   - System Boundaries: No physical inventory tracking, no offline cash management, no external travel bookings.
+
+3. METHODOLOGY
+   - Monolithic Decoupling: React 18+ SPA (compiled via Vite, Zustand state, Axios clients) and Laravel 12 API (PHP 8.2+, Sanctum token auth, Carbon utilities, dompdf invoices).
+   - Database Design: MySQL 8.0 StatefulSet inside a Kubernetes cluster ensuring transaction safety (COMMIT/ROLLBACK) and zero dirty reads.
+   - DevOps & Orchestration: Lightweight K3s Kubernetes cluster on AWS EC2 (8 vCPUs, 32 GB RAM, 40 GiB EBS). Nginx Ingress routes `/api/*` to backend and `/*` to frontend pods.
+   - Jenkins CI/CD Pipeline: Detail the 8 stages: Checkout -> docker-compose build -> Import images into K3s registry -> Deploy via kubectl -> Rollout restart deployments -> Wait for backend status check -> Execute migrations -> Execute seeders.
+
+4. FEATURES
+   - Auth & Security: Sanctum JWT token verification, role-based middlewares.
+   - Workspace CRUD: Event management, Carbon-based event status (upcoming, live, completed), milestone due-date tasks.
+   - Guest RSVP Loop: CRM directory, automated 40-character unique tokens (`rsvp_token`), SMTP invite queue, and a secure public responsive RSVP page.
+   - Vendor bookings & Payments: Price-filtered directory, Razorpay checkout with HMAC-SHA256 signature webhook verification, automatic budget Spent Amount consolidation, and PDF invoices.
+   - Direct Messaging: In-app real-time chat between planners and vendors.
+
+5. CONCLUSION
+   - Quality Metrics: Sub-100ms API response latency, sub-500ms client page transitions, >99.9% uptime SLA, MTBF >90 days, and complete SQL injection/XSS protection.
+   - Infrastructure Resilience: ReplicaSet controllers and self-healing liveness/readiness probes.
+
+6. FUTURE PLANS
+   - Roadmap: Offline guest list support via Progressive Web App (PWA), AI-driven budget forecasting models, currency/language localization, and travel API integrations.
+
+--------------------------------------------------------------------------------
+INSTRUCTIONS TO GENERATE IN NOTEBOOKLM
+--------------------------------------------------------------------------------
+Copy and paste this prompt directly into the NotebookLM chat window with the project source documentation uploaded, and ask: 
+"Using the uploaded project documents and this optimized outline, generate a slide-by-slide script for my presentation."
+================================================================================
