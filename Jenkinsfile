@@ -31,7 +31,7 @@ pipeline {
                     echo 'Waiting for database health...'
 
                     sh '''
-                    until [ "$(docker inspect -f {{.State.Health.Status}} $(docker-compose ps -q db))" = "healthy" ];
+                    until [ "$(docker inspect -f {{.State.Health.Status}} $(docker compose ps -q db))" = "healthy" ];
                     do
                       echo "Waiting for database..."
                       sleep 5
