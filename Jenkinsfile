@@ -18,8 +18,8 @@ pipeline {
                 script {
                     echo 'Building and starting containers...'
 
-                    sh 'docker-compose down'
-                    sh 'docker-compose up --build -d'
+                    sh 'docker compose down'
+                    sh 'docker compose up --build -d'
                 }
             }
         }
@@ -40,11 +40,11 @@ pipeline {
 
                     echo 'Running migrations...'
 
-                    sh 'docker-compose exec -T backend php artisan migrate --force'
+                    sh 'docker compose exec -T backend php artisan migrate --force'
 
                     echo 'Running seeders...'
 
-                    sh 'docker-compose exec -T backend php artisan db:seed --force'
+                    sh 'docker compose exec -T backend php artisan db:seed --force'
                 }
             }
         }
@@ -53,7 +53,7 @@ pipeline {
     post {
 
         success {
-            echo 'Kubernetes deployment completed successfully!'
+            echo 'Deployment completed successfully!'
         }
 
         failure {
