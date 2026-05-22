@@ -1,0 +1,135 @@
+================================================================================
+                       AURA EVENTS - DEVOPS ARCHITECTURE
+                             FILE 1: INTRODUCTION
+================================================================================
+
+1. INTRODUCTION
+--------------------------------------------------------------------------------
+Aura Events is a premium, decoupled event planning digital workspace and vendor marketplace. It is designed to serve couples, professional event planners, and local wedding vendors. From a DevOps and systems engineering perspective, Aura Events represents a modern, cloud-native application designed with the principle of "monolithic decoupling." It separates a high-performance React client-side Single Page Application (SPA) from a robust Laravel 12 RESTful API.
+
+For a senior DevOps engineer, the primary objective is to build, run, and scale this system using automated infrastructure pipelines. The development-to-production lifecycle of Aura Events is governed by containerization (Docker and Docker Compose), version control (Git and GitHub), and automated builds and deployments (Jenkins CI/CD) on a dedicated AWS EC2 virtual server.
+
+In this architectural paradigm:
+- The Frontend is a decoupled React 18+ SPA compiled via Vite and served through a containerized Nginx instance on port 80.
+- The Backend is a Laravel 12 API built on PHP 8.2 (using a lightweight Alpine Linux base) communicating on port 8000.
+- The Database is a containerized MySQL 8.0 container managing relational tables with persistent state mapping.
+- The Async Layer is a background PHP-FPM container running automated SMTP mail queues.
+
+Containerizing these services guarantees absolute environment parity between developers' local workstations and the production cloud environment. This architecture eliminates the traditional "works on my machine" syndrome and establishes a secure, repeatable path to production.
+
+
+2. SCOPE OF THE STUDY (PROBLEM STATEMENT)
+--------------------------------------------------------------------------------
+Traditionally, event planning applications were built as tightly coupled, monolithic systems. This architectural pattern introduces severe bottlenecks from an operational and DevOps standpoint:
+1. High Coupling & Scaling Inefficiency: If the guest RSVP portal experiences heavy traffic due to large-scale SMTP dispatches, the entire application slows down. Scaling the monolithic stack horizontally is costly, as it requires duplicating the database connections, session variables, and backend logic alongside the presentation layer.
+2. Inconsistent Environments: Different developers running varying versions of PHP, Node.js, and local MySQL engines lead to database migration failures and environment mismatches upon deployment.
+3. Manual Deployment Errors: Traditional deployments rely on manual SSH connections, FTP file transfers, and interactive command execution. These manual steps lead to severe downtime, missing configuration variables, and data sync issues.
+4. Vulnerability in Release cycles: Lack of automated testing and staging gates means bugs are pushed directly to production. This causes high Mean Time to Recovery (MTTR) and low system reliability.
+
+DevOps Problem Statement:
+The operational objective of the Aura Events platform is to decouple these layers completely and establish a secure, automated CI/CD pipeline. By containerizing the frontend, backend, database, and background worker containers, we can isolate dependencies, manage environment configurations securely, and orchestrate automated updates. 
+
+The scope of this DevOps study covers:
+- Containerizing the multi-service application (frontend, backend, database, queue) using Docker and Docker Compose.
+- Constructing an automated, zero-touch Jenkins pipeline using a declarative Jenkinsfile.
+- Integrating GitHub webhooks to trigger builds automatically upon code commits on the `main` branch.
+- Implementing zero-downtime rolling deployments via Docker Compose on the production host.
+- Securing the system using automated health checks, secure environment configurations, and automated SQL migrations.
+
+Product Boundaries & Constraints:
+- Relational Persistence: No offline database records are allowed; all actions must sync through the active MySQL Docker container.
+- Payment Integration: Capturing online transactions is decoupled via Razorpay SDK integrations, avoiding on-premise PCI compliance overhead.
+- Asset and Resource Management: No physical inventory tracking or manual travel planning is within the system boundary, allowing a lightweight 15 GiB EBS storage structure.
+
+
+3. EXISTING SYSTEM
+--------------------------------------------------------------------------------
+3.1 Introduction
+The legacy system previously used by the event coordination team relied on manual spreadsheets (e.g., Excel/Google Sheets), offline cash ledgers, and fragmented communication tools (email, SMS, WhatsApp). When a digital version was first developed, it was hosted as a single PHP monolith on a shared Apache server. 
+
+Operational pain points of this existing system included:
+- Manual updates via FTP which occasionally corrupted live code.
+- Frequent server locks due to un-optimized database queries and lack of connection pooling.
+- Manual execution of database alterations (running raw SQL files directly on the production database).
+- Lack of background queue workers, meaning email invitations were processed synchronously during browser sessions, causing requests to time out.
+- High security risks due to exposed database ports, raw passwords stored in code, and lack of automatic security patching on the host OS.
+
+3.2 Existing Software Data Flow Diagram (DFD) for Present System
+Below is the data flow representation of the legacy, manually-operated monolithic system:
+
++-------------+       (Manual Excel Updates)      +--------------------+
+|   Planner   | ================================> | Offline Excel Sheet|
++-------------+                                   +---------+----------+
+       |                                                    | (Manual Sync)
+       | (FTP Code Uploads)                                 v
+       v                                          +--------------------+
++-------------+       (Raw SQL execution)         | Database (Shared)  |
+|Shared Apache| ================================> | No transactions    |
+| Web Server  |                                   +--------------------+
++-------------+                                             ^
+       |                                                    | (Manual Lookup)
+       | (Synchronous Page Request)                         |
+       v                                                    |
++-------------+                                   +---------+----------+
+|    Guest    | ================================> | Guest RSVP Form    |
+|  (Browser)  |     (Prone to timeout due to      | (No secure tokens) |
++-------------+      synchronous SMTP triggers)   +--------------------+
+
+In this existing architecture, there is no automated version control tracking changes, no pipeline executing tests, and no sandbox container isolating application crashes. A single PHP syntax error ruins the entire application for all active users.
+
+3.3 What’s New in the System to be Developed
+The newly architected Aura Events platform completely redesigns these operations from a DevOps perspective. The core enhancements include:
+1. Monolithic Decoupling: Complete separation of the React frontend SPA from the Laravel API, communicating purely via CORS-compliant JSON payloads.
+2. Complete Containerization: The entire system runs inside Docker containers. The frontend is served via an Nginx container, the backend runs PHP-FPM, the worker runs asynchronous queues, and the database runs a dedicated MySQL 8.0 engine.
+3. Infrastructure as Code (IaC): Environments are defined declaratively in `docker-compose.yml` for local development and staging environments.
+4. GitOps and CI/CD Automation: Every single commit pushed to GitHub is automatically intercepted by a Jenkins runner. Jenkins builds new Docker images, runs automated test suites, rebuilds containers, and safely migrates the database schema using automated commands (`php artisan migrate --force`).
+5. Self-Healing & Resilience: Docker Compose restarts containers automatically on crash, and database migrations are governed by automated pipeline health checks.
+
+
+4. PROBLEM ANALYSIS
+--------------------------------------------------------------------------------
+4.1 Product Definition
+Aura Events is defined as a cloud-native, high-performance event workspace. From a systems standpoint, the product is packaged into highly portable, immutable container images.
+- Base Platform: Linux Ubuntu 22.04 LTS host running on an AWS EC2 instance.
+- Deployment & Orchestration: Docker Compose multi-container services.
+- Core Services:
+  - Frontend Container: React 18+ client application compiled under Node 20 and served via Nginx Alpine on port 80.
+  - Backend API Container: Laravel 12 running under PHP 8.2 Alpine on port 8000.
+  - Queue Worker Container: Asynchronous Alpine-PHP process running Laravel queue listeners.
+  - Database Container: Relational MySQL 8.0 with dedicated file storage mapping.
+- Network Layer: Nginx container serving frontend and routing API requests `/api/*` to the Laravel API container.
+
+4.2 Feasibility Analysis
+A complete DevOps audit was executed to determine the feasibility of this environment:
+
+- Technical Feasibility (Highly Feasible):
+  The target AWS EC2 host features 8 vCPUs, 8 GB RAM, and a 15 GiB EBS SSD volume. MySQL 8.0 runs extremely efficiently within 1-2 GB of RAM under container constraints, leaving plenty of RAM for our PHP-FPM, Node/Nginx, and Jenkins runners. Multi-stage Docker builds ensure our final application images are stripped of dev-dependencies, keeping them under 150MB each, which is highly optimal for the 15 GiB EBS storage limit. This hardware setup easily accommodates our traffic SLA of 500 concurrent sessions and guarantees sub-100ms API response latencies.
+
+- Operational Feasibility (Highly Feasible):
+  By standardizing the stack inside Docker, we achieve 100% environment parity. Developers run the exact same container configurations locally using `docker-compose up`. The automated Jenkins pipeline removes the risk of human configuration errors. Jenkins takes care of all deployment steps, database migrations, and caching. Team members do not need to perform manual setup or run manual commands on the server; pushing to Git is the only required action.
+
+- Economic and Resource Feasibility (Highly Feasible):
+  Using open-source tools (Docker, Jenkins, Nginx, MySQL, Linux) eliminates software licensing fees. Consolidation of all microservices onto a single high-performance EC2 instance instead of purchasing multiple virtual machines reduces infrastructure costs by over 60%, while maintaining clear resource isolation through container boundaries.
+
+4.3 Project Plan
+The DevOps deployment and integration plan follows an agile, iterative workflow:
+
+- Phase 1: Local Dockerization (Completed)
+  - Create standardized Dockerfiles for the frontend React SPA and Laravel API backend.
+  - Formulate a local `docker-compose.yml` to spin up backend, frontend, queue, and database services with health checks.
+
+- Phase 2: Source Control Setup (Completed)
+  - Initialize the Git repository and host it on GitHub (`raj-ranjan-70/MVC-project`).
+  - Configure `.gitignore` rules to prevent committing development secrets (`.env` files) and node/composer dependencies.
+
+- Phase 3: Continuous Integration (CI) Automation (Completed)
+  - Deploy Jenkins on the AWS EC2 instance.
+  - Grant Jenkins permission to run Docker commands by adding it to the system's `docker` group.
+  - Set up a Declarative Pipeline linked directly to the SCM.
+
+- Phase 4: Continuous Deployment (CD) Setup (Completed)
+  - Prepare the production Docker environment on the Ubuntu host.
+  - Set up Docker network and Nginx reverse proxy mappings.
+  - Author a declarative Jenkinsfile executing automated stages: SCM Checkout, Build & Deploy (via `docker-compose up --build -d`), Waiting for DB Health, Database Migrations, and Dynamic Database Seeding.
+
+================================================================================

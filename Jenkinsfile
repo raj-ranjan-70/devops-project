@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        KUBECONFIG = '/etc/rancher/k3s/k3s.yaml'
+        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
     }
 
     stages {
@@ -13,86 +13,38 @@ pipeline {
             }
         }
 
-        stage('Build Images') {
+        stage('Build & Deploy') {
             steps {
                 script {
+                    echo 'Building and starting containers...'
 
-                    sh 'docker-compose build'
-
+                    sh 'docker-compose down'
+                    sh 'docker-compose up --build -d'
                 }
             }
         }
 
-        stage('Import Images Into K3s') {
+        stage('Post-Deployment Tasks') {
             steps {
                 script {
+
+                    echo 'Waiting for database health...'
 
                     sh '''
-                    docker save event-planner-pipeline-backend:latest | sudo k3s ctr images import -
+                    until [ "$(docker inspect -f {{.State.Health.Status}} $(docker-compose ps -q db))" = "healthy" ];
+                    do
+                      echo "Waiting for database..."
+                      sleep 5
+                    done
                     '''
 
-                    sh '''
-                    docker save event-planner-pipeline-frontend:latest | sudo k3s ctr images import -
-                    '''
+                    echo 'Running migrations...'
 
-                }
-            }
-        }
+                    sh 'docker-compose exec -T backend php artisan migrate --force'
 
-        stage('Deploy To Kubernetes') {
-            steps {
-                script {
+                    echo 'Running seeders...'
 
-                    sh 'kubectl apply -f k8s/'
-
-                }
-            }
-        }
-
-        stage('Restart Deployments') {
-            steps {
-                script {
-
-                    sh 'kubectl rollout restart deployment/backend'
-                    sh 'kubectl rollout restart deployment/frontend'
-                    sh 'kubectl rollout restart deployment/queue-worker'
-
-                }
-            }
-        }
-
-        stage('Wait For Backend') {
-            steps {
-                script {
-
-                    sh '''
-                    kubectl rollout status deployment/backend
-                    '''
-
-                }
-            }
-        }
-
-        stage('Run Migrations') {
-            steps {
-                script {
-
-                    sh '''
-                    kubectl exec deployment/backend -- php artisan migrate --force
-                    '''
-
-                }
-            }
-        }
-
-        stage('Run Seeders') {
-            steps {
-                script {
-
-                    sh '''
-                    kubectl exec deployment/backend -- php artisan db:seed --force
-                    '''
-
+                    sh 'docker-compose exec -T backend php artisan db:seed --force'
                 }
             }
         }

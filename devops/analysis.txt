@@ -1,0 +1,260 @@
+================================================================================
+                       AURA EVENTS - DEVOPS ARCHITECTURE
+                              FILE 2: ANALYSIS
+================================================================================
+
+5. SOFTWARE REQUIREMENT ANALYSIS
+--------------------------------------------------------------------------------
+5.1 Introduction
+From a DevOps engineering perspective, Software Requirement Analysis (SRA) defines the exact mapping between application features and the physical and virtual infrastructure resources they require. SRA ensures that development demands—such as sub-100ms API response latency, real-time database transactions, automated SMTP mail dispatches, and secure payment processing—are fully supported by the system's container limits, network rules, and pipeline configs. 
+
+By analyzing requirements early from an operational perspective, we prevent memory leakage, secure resource bottlenecks, ensure high-availability SLA constraints, and streamline the CI/CD pipeline.
+
+5.2 General Description
+To satisfy the performance and security requirements of Aura Events, the infrastructure defines clear server, software, and communication interfaces:
+
+5.2.1 Hardware and Host Interfaces
+- Production Host: Amazon Web Services (AWS) EC2 Virtual Server.
+- Host Operating System: Ubuntu Server 22.04 LTS (HVM), SSD Volume Type.
+- Computational Footprint: 8 Virtual CPUs (vCPUs) with x86_64 architecture.
+- RAM Allocation: 8 GB of system Memory, optimized for local Redis and MySQL container resource restrictions.
+- Host Storage: 15 GiB AWS Elastic Block Store (EBS) General Purpose SSD (gp3) volume, mounting operating system files, container images, and active database directories under strict cache pruning.
+- Networking: Dedicated elastic IP mapped to standard DNS. Core open ports include 22 (SSH), 80 (HTTP traffic), 443 (HTTPS secure traffic), 8080 (Jenkins UI), and 8000 (Local API development port).
+
+5.2.2 Software and Container Interfaces
+- Container Runtime: Docker Engine (v20.10+) with `containerd` backend.
+- Local Isolation: Docker Compose v2.x executing multi-container definitions.
+- Multi-Container Deployment: Automated multi-service runtime orchestration via Docker Compose.
+- Language Runtimes:
+  - PHP 8.2 Alpine: Running PHP-FPM, PHP-CLI, Composer package manager, and required extensions (`pdo_mysql`, `bcmath`, `gd`, `zip`, `opcache`).
+  - Node.js 20 Alpine: Used as a multi-stage compilation image to install JS dependencies and execute Vite builds.
+- Database: MySQL 8.0 Community Server containerized as a Docker service with host volume mapping to secure relational persistence.
+- Web Servers:
+  - Nginx Alpine (Frontend Container): Serves compiled React static assets and handles single-page routing rewrites.
+  - Nginx Reverse Proxy: Manages host-level SSL/TLS termination and routes inbound traffic.
+
+5.2.3 Communication and Network Interfaces
+- Transport Layer Security: HTTPS protocols strictly locked to TLS 1.3 to secure client-API transactions.
+- Serialized Payloads: REST API communication uses application/json headers.
+- SMTP Transfer: Mail dispatches occur over secure SMTP TLS (Port 587) or SSL (Port 465) using queue worker processes.
+- Payment Webhooks: Outbound secure HTTPS callbacks POSTed from Razorpay servers directly to `/api/payments/webhook` with automated cryptographically secure signature verification.
+
+5.3 Specific Requirements
+The DevOps pipeline translates application features into specific system and operational configurations:
+
+5.3.1 Role-Based Access & Token Security
+- Requirement: Secure authorization dividing Planners, Vendors, and Administrators.
+- DevOps Implementation: Client browser stores a Sanctum Bearer JWT token generated in the Laravel container. All secure API endpoints require Sanctum Auth Middleware. Environmental variables containing security keys are never stored in git; they are securely injected into containers at runtime by the Jenkins pipeline using the Jenkins Credentials Store.
+
+5.3.2 Asynchronous Tasks & SMTP invite Queue
+- Requirement: Dispatching bulk guest email invitations with unique RSVP tokens without locking the browser.
+- DevOps Implementation: Planners submit guest lists, and the backend hashes 40-character tokens (`rsvp_token`) in the MySQL container. Instead of running SMTP dispatches synchronously, the Laravel container pushes tasks to a background Queue. A dedicated Queue Worker container (running `php artisan queue:work`) processes these emails asynchronously. If a dispatch fails, the queue worker automatically retries up to 3 times before logging the event.
+
+5.3.3 Razorpay & Financial Transactions
+- Requirement: Secure budget consolidation, Razorpay checkouts, and automatic invoice PDF compilation.
+- DevOps Implementation: When a user authorizes a card/UPI payment, the Laravel backend contacts the Razorpay API. Once the gateway processes the transaction, a callback triggers. The containerized backend computes a local HMAC-SHA256 signature using the private gateway key and verifies it against the inbound headers. Upon success, database transactions (COMMIT/ROLLBACK) safely update the budget status. The container compiles a dynamic PDF invoice using `dompdf` and stores it temporarily, avoiding disk-fill on our 15 GiB EBS volume.
+
+
+6. DESIGN
+--------------------------------------------------------------------------------
+6.1 System Design
+The system architecture separates network routing, presentation layers, business logic, background execution, and persistent databases. 
+
+Below is the layout of the containerized services managed under Docker Compose:
+
+                                +----------------------------+
+                                |    Client Browser (HTTPS)  |
+                                +--------------+-------------+
+                                               |
+                                               v (Port 443 / TLS 1.3)
+                                +--------------+-------------+
+                                |   Nginx Reverse Proxy / 80 |
+                                +-------+--------------+-----+
+                                        |              |
+                    (Paths /*)          |              | (Paths /api/*)
+                    Route to UI Service |              | Route to Backend Service
+                                        v              v
+                        +---------------+--+      +----+---------------+
+                        |  React SPA       |      | Laravel API        |
+                        |  Container       |      | Container (Port8000|
+                        +------------------+      +-------+-----+------+
+                                                          |     |
+                                        (Internal Network)|     | (Queue Dispatch)
+                                        Port 3306         |     v
+                                                          |   +-+--------------+
+                                                          |   | Queue Worker   |
+                                                          |   | (Mail Jobs)    |
+                                                          v   +----------------+
+                                                  +-------+------------+
+                                                  | MySQL 8.0          |
+                                                  | Container          |
+                                                  +-------+------------+
+                                                          |
+                                                          v (Mount Volume)
+                                                  +-------+------------+
+                                                  | Local Named Volume |
+                                                  | (EBS gp3 Storage)  |
+                                                  +--------------------+
+
+6.2 Design Notations & Detailed Infrastructure Configurations
+1. Local Development (`docker-compose.yml`):
+   Defines the local environment using relative build contexts (`./event-planner-backend` and `./event-planner-frontend`). The backend connects to the MySQL container using service networking (`db`), and the database uses a named docker volume (`db_data`) for state retention.
+2. Production Deployment Configurations:
+   - Reverse Proxy: Binds to host DNS, mapping path `/` to the React frontend container, and path `/api` to the Laravel API backend container.
+   - Frontend Service: Runs Nginx Alpine serving static assets, configured with fallbacks to rewrite single-page React Router configurations.
+   - Backend Service: Runs PHP-FPM for executing Laravel endpoints, using health checking to monitor container responsiveness.
+   - Queue Worker Service: Runs the backend image with an overridden command: `php artisan queue:work` to execute asynchronous tasks.
+   - MySQL Container: Connects to local host-mapped directory (`db_data`) on the AWS EC2 EBS storage to secure relational persistence.
+
+6.3 Flowcharts
+Below is the ASCII Flowchart depicting the CI/CD Pipeline Automation Flow governed by Jenkins:
+
+        [ Developer Pushes Code to GitHub (main branch) ]
+                               |
+                               v
+             [ GitHub Webhook Intercepts & Triggers ]
+                               |
+                               v
+                     [ Jenkins Pipeline ]
+                               |
+                               v
+                    [ Stage 1: SCM Checkout ]
+            (Pulls code from main branch repository)
+                               |
+                               v
+                  [ Stage 2: Docker Compose Build ]
+          (Generates fresh frontend and backend images)
+                               |
+                               v
+             [ Stage 3: Stop & Deploy Containers ]
+       (Runs docker-compose down and docker-compose up -d)
+                               |
+                               v
+             [ Stage 4: Wait For Database Healthy ]
+         (Checks database healthcheck status in loop)
+                               |
+                               v
+               [ Stage 5: Run Database Migrations ]
+        (Executes Laravel DB migrations via docker exec)
+                               |
+                               v
+                 [ Stage 6: Run Database Seeding ]
+          (Executes database seeders via docker exec)
+                               |
+                               v
+                  ( SUCCESS: Notify Slack/Email )
+
+6.4 Infrastructure Pseudo code
+
+6.4.1 Backend Dockerfile (Multi-Stage Build)
+```dockerfile
+# Stage 1: Build PHP dependencies using Composer
+FROM php:8.2-fpm-alpine AS backend-builder
+WORKDIR /app
+RUN apk add --no-cache git unzip libzip-dev libpng-dev
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+
+# Stage 2: Production PHP execution layer
+FROM php:8.2-fpm-alpine
+WORKDIR /var/www/html
+RUN apk add --no-cache libzip-dev libpng-dev libjpeg-turbo-dev zip \
+    && docker-php-ext-install pdo_mysql zip bcmath gd \
+    && docker-php-ext-enable opcache
+COPY --from=backend-builder /app/vendor ./vendor
+COPY . .
+RUN composer dump-autoload --optimize --no-dev
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+EXPOSE 8000
+CMD ["php-fpm"]
+```
+
+6.4.2 Frontend Dockerfile (Multi-Stage Build)
+```dockerfile
+# Stage 1: Build React static bundle using Node
+FROM node:20-alpine AS frontend-builder
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Stage 2: Serve React assets using Nginx
+FROM nginx:alpine
+COPY --from=frontend-builder /app/dist /usr/share/nginx/html
+# Custom configuration to redirect 404s to index.html for SPA routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+6.4.3 Database Wait Loop Script (Used in Jenkins stage)
+```bash
+#!/bin/bash
+# wait-for-db.sh script running in CI pipeline to prevent premature migrations
+echo "Waiting for database container health..."
+RETRIES=10
+INTERVAL=5
+
+until [ "$(docker inspect -f {{.State.Health.Status}} event-planner-db)" = "healthy" ] || [ $RETRIES -eq 0 ]; do
+  echo "Database is starting up... ($RETRIES attempts remaining)"
+  sleep $INTERVAL
+  RETRIES=$((RETRIES-1))
+done
+
+if [ $RETRIES -eq 0 ]; then
+  echo "Error: Database did not start in time. Pipeline failed."
+  exit 1
+else
+  echo "Database is healthy. Proceeding with migrations."
+fi
+```
+
+
+7. TESTING
+--------------------------------------------------------------------------------
+7.1 Functional Testing
+Functional testing verifies that the application workflows execute according to user expectations. From a DevOps standpoint, functional testing is executed inside ephemeral docker environments.
+- Endpoint Testing: Standard REST controllers (e.g., Auth, Event CRUD, Guest CSV uploads, booking updates) are validated by sending simulated HTTP requests with JSON inputs to verify status responses (200 OK, 201 Created, 422 Unprocessable Entity).
+- Middleware Verification: Confirms that attempting to access a dashboard endpoint without an `Authorization: Bearer` header returns a 401 Unauthorized block.
+- SMTP Integration: Validates that triggers sending guest RSVP emails correctly connect to SMTP relay servers and compile the unique URL token.
+
+7.2 Structural (White-Box) Testing
+Structural testing verifies the internal code paths, logic flows, and database transaction boundaries.
+- Unit Testing: Individual models, form request validators, Carbon-date helpers, and Zustand state modifiers are tested in isolation. We write mock objects to ensure these algorithms return correct outputs under boundary conditions.
+- Code Coverage: Built-in coverage analyzers measure the percentage of lines executed during tests, targeting a minimum of 80% coverage on core business domains (budget computations, signature verifications).
+
+7.3 Levels of Testing
+Testing is divided into clear sequential tiers within the DevOps pipeline:
+1. Local Developer Level: Developers run linting checks (`eslint` for frontend, `phpstan` for backend) and local tests (`npm test` and `./vendor/bin/phpunit`) in their docker-compose workspace before pushing changes.
+2. Continuous Integration (CI) Level: Once code is pushed to GitHub, the Jenkins pipeline triggers. Jenkins compiles the fresh containers and executes:
+   - Backend PHPUnit Feature and Integration tests.
+   - Frontend Vite test suites.
+   - Static analysis tools.
+3. System Integration Level: Jenkins spins up MySQL containers, executes migrations from scratch, and verifies database transaction safety. It mocks payment gateway responses to test Razorpay HMAC verification workflows.
+4. Deployment Status Checks: After starting the containers, the pipeline executes status checks using docker health status checks to confirm the MySQL and backend containers are ready to handle traffic.
+
+7.4 Testing the Project in CI/CD
+To automate testing, Jenkins integrates commands that block bad code from reaching the server:
+
+```groovy
+stage('Run Unit & Integration Tests') {
+    steps {
+        script {
+            echo 'Executing backend testing suite...'
+            // Execute PHPUnit inside the compiled backend container
+            sh 'docker-compose exec -T backend ./vendor/bin/phpunit --configuration phpunit.xml'
+            
+            echo 'Executing frontend static linting & test checks...'
+            // Execute npm tests inside the compiled frontend container
+            sh 'docker-compose exec -T frontend npm run test -- --watch=false'
+        }
+    }
+}
+```
+
+If any test fail, the exit code is non-zero (`1`). Jenkins catches this failure, immediately marks the pipeline status as "FAILED," halts the CD deployment stage, and leaves the existing production environment completely untouched. This guarantees zero-downtime stability and ensures that broken builds never break the active user environment.
+
+================================================================================

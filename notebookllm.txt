@@ -1,53 +1,36 @@
 ================================================================================
-           NOTEBOOKLM OPTIMIZED PRESENTATION GENERATION PROMPT: AURA EVENTS
+          CONCISE DEVOPS PRESENTATION GENERATION PROMPT FOR NOTEBOOKLM
 ================================================================================
 
-Role: Elite Tech Presenter, Technical Architect, and Capstone Evaluator.
-Task: Create a highly technical 10 to 12-slide presentation script based on the uploaded sources for "Aura Events."
-Tone: Premium, concise, Apple-Keynote style, authoritative.
+Copy and paste the prompt below into NotebookLM with your uploaded '/devops' files:
 
---------------------------------------------------------------------------------
-PRESENTATION REQUIREMENTS
---------------------------------------------------------------------------------
-For each slide in the presentation, output:
-1. [Slide Title] & [Visual Concept] (Minimalist, glassmorphism, HSL warm colors: #fdf7ff, Soft Gold accents, Elegant Brown text).
-2. [Technical Bullets] (3-4 concise, metric-driven, framework-specific bullet points).
-3. [Speaker Notes] (A detailed script explaining architecture decisions, MVC flow, and technical trade-offs).
+---
 
-Ensure the presentation maps exactly to these six mandatory sections:
+Act as an Elite DevOps Architect and Cloud Engineer. Based on our uploaded DevOps documentation ('introduction.txt', 'analysis.txt', and 'implementation.txt'), generate a highly technical 12-slide capstone presentation script tailored for my DevOps/Cloud Infrastructure Professor. 
 
-1. INTRODUCTION
-   - Define Aura Events: A luxury, decoupled event planning digital workspace and marketplace.
-   - Design System: The "Celestial Union" aesthetic (#fdf7ff warm white base, elegant typography, backdrop-filter glass layers, 24px soft rounded cards, pill-shaped buttons).
+### Visual & Presentation Theme:
+- Theme: Minimalist luxury "Celestial Union" (backdrop-filter glassmorphism, soft diffused drop-shadows).
+- Colors: Soft Neutrals (#fdf7ff background base), Soft Gold (#d4af37) accents, Charcoal Gray (#1f2937).
+- Format per slide:
+  1. [Slide Title] (DevOps/Cloud focused)
+  2. [Visual Concept] (Topology diagrams, container grids, CLI snapshots, or pipelines)
+  3. [Technical Bullet Points] (3-4 concise, metrics-driven, platform-specific bullets)
+  4. [Speaker Notes] (A detailed script explaining design decisions, security, and resource limits)
 
-2. OBJECTIVE
-   - Addressing coordination overhead by unifying task schedules, budget tracking, vendor marketplace directories, and RSVPs.
-   - User Personas: Planners/Couples (CRUD logs, timelines), Vendors (service listings, payment requests), and Admins (audits, vendor approval).
-   - System Boundaries: No physical inventory tracking, no offline cash management, no external travel bookings.
+### 12-Slide Outline to Generate:
 
-3. METHODOLOGY
-   - Monolithic Decoupling: React 18+ SPA (compiled via Vite, Zustand state, Axios clients) and Laravel 12 API (PHP 8.2+, Sanctum token auth, Carbon utilities, dompdf invoices).
-   - Database Design: MySQL 8.0 StatefulSet inside a Kubernetes cluster ensuring transaction safety (COMMIT/ROLLBACK) and zero dirty reads.
-   - DevOps & Orchestration: Lightweight K3s Kubernetes cluster on AWS EC2 (8 vCPUs, 32 GB RAM, 40 GiB EBS). Nginx Ingress routes `/api/*` to backend and `/*` to frontend pods.
-   - Jenkins CI/CD Pipeline: Detail the 8 stages: Checkout -> docker-compose build -> Import images into K3s registry -> Deploy via kubectl -> Rollout restart deployments -> Wait for backend status check -> Execute migrations -> Execute seeders.
+Slide 1: Architectural Vision (Decoupled React 18+ SPA & Laravel 12 API monorepo layout)
+Slide 2: Monolithic Bottlenecks (FTP synchronization, environmental drift, high MTTR vs. modern containers)
+Slide 3: AWS EC2 Host Infrastructure (Sizing: 8 vCPUs, 8 GB RAM, 15 GiB EBS gp3, port security 22/80/443/8000/8080)
+Slide 4: Standardized Containerization (Multi-stage Dockerfiles, Alpine images keeping builds under 150 MB)
+Slide 5: Local Multi-Container Services (Compose layout with backend, frontend, queue, and db services; depends_on checks)
+Slide 6: GitOps & GitHub Webhook (SCM triggers, webhook payload endpoints, secure secret injections via Jenkins Credentials)
+Slide 7: Continuous Integration (Declarative Jenkinsfile, automated testing via Jest and PHPUnit in containers, failure blocks)
+Slide 8: Continuous Deployment (Zero-touch deployment, automated database migrations and seeds via docker exec -T)
+Slide 9: Database Persistence & Safety (relational volumes mapped to EC2 EBS storage, strict ACID transaction COMMIT/ROLLBACK)
+Slide 10: Cloud Operations & Maintenance (EBS disk hygiene, weekly prune cron to fit 15 GiB EBS, midnight MySQL backups to S3)
+Slide 11: System Performance & Security (<100ms API latency, <500ms transitions, 99.9% SLA, webhook HMAC signature audits)
+Slide 12: Capstone Roadmap (Scalability plans: MySQL to Amazon RDS, Docker Compose to AWS EKS, Prometheus/Grafana metrics)
 
-4. FEATURES
-   - Auth & Security: Sanctum JWT token verification, role-based middlewares.
-   - Workspace CRUD: Event management, Carbon-based event status (upcoming, live, completed), milestone due-date tasks.
-   - Guest RSVP Loop: CRM directory, automated 40-character unique tokens (`rsvp_token`), SMTP invite queue, and a secure public responsive RSVP page.
-   - Vendor bookings & Payments: Price-filtered directory, Razorpay checkout with HMAC-SHA256 signature webhook verification, automatic budget Spent Amount consolidation, and PDF invoices.
-   - Direct Messaging: In-app real-time chat between planners and vendors.
-
-5. CONCLUSION
-   - Quality Metrics: Sub-100ms API response latency, sub-500ms client page transitions, >99.9% uptime SLA, MTBF >90 days, and complete SQL injection/XSS protection.
-   - Infrastructure Resilience: ReplicaSet controllers and self-healing liveness/readiness probes.
-
-6. FUTURE PLANS
-   - Roadmap: Offline guest list support via Progressive Web App (PWA), AI-driven budget forecasting models, currency/language localization, and travel API integrations.
-
---------------------------------------------------------------------------------
-INSTRUCTIONS TO GENERATE IN NOTEBOOKLM
---------------------------------------------------------------------------------
-Copy and paste this prompt directly into the NotebookLM chat window with the project source documentation uploaded, and ask: 
-"Using the uploaded project documents and this optimized outline, generate a slide-by-slide script for my presentation."
+---
 ================================================================================
