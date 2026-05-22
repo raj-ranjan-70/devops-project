@@ -4,6 +4,7 @@ FROM node:20-alpine as build-stage
 WORKDIR /app
 
 COPY package*.json ./
+
 RUN npm install
 
 COPY . .
@@ -28,7 +29,7 @@ RUN echo 'server { \
     } \
     \
     location /api/ { \
-        proxy_pass http://backend:5000/; \
+        proxy_pass http://backend:8000/api/; \
         proxy_http_version 1.1; \
         proxy_set_header Host $host; \
         proxy_set_header X-Real-IP $remote_addr; \
