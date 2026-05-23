@@ -42,10 +42,6 @@ pipeline {
 
                     sh 'docker compose exec -T backend php artisan migrate --force'
 
-                    echo 'Running seeders...'
-
-                    sh 'docker compose exec -T backend php artisan db:seed --force'
-
                 }
             }
         }
